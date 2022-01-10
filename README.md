@@ -37,3 +37,8 @@ On the UPM windows, select **Input System-UniSense** package, go to the Samples 
 
 - [Ohjurot/DualSense-Windows](https://github.com/Ohjurot/DualSense-Windows)
 - [DualSense Haptics, LEDs and more (HID Output Report) in /r/gamedev](https://www.reddit.com/r/gamedev/comments/jumvi5/dualsense_haptics_leds_and_more_hid_output_report/)
+
+Added sources : 
+- [Pre deletion save of DualSense Haptics, LEDs and more (HID Output Report) in /r/gamedev](https://gist.github.com/stealth-alex/10a8e7cc6027b78fa18a7f48a0d3d1e4)
+- [Game Controller Collective Wiki => Sony Dualsense](https://controllers.fandom.com/wiki/Sony_DualSense#FFB_Trigger_Effect_Factories)
+- [Nielk1 trigger effect generators](https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db)

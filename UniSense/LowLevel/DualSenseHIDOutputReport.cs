@@ -175,15 +175,15 @@ namespace UniSense.LowLevel
                 case DualSenseTriggerEffectType.ContinuousResistance:
                     triggerMode = 0x01;
                     ClearTriggerParams(triggerParams);
-                    triggerParams[0] = state.Continuous.StartPosition;
-                    triggerParams[1] = state.Continuous.Force;
+                    triggerParams[0] = state.ContinuousResistance.StartPosition;
+                    triggerParams[1] = state.ContinuousResistance.Force;
                     break;
                 case DualSenseTriggerEffectType.SectionResistance:
                     triggerMode = 0x02;
                     ClearTriggerParams(triggerParams);
-                    triggerParams[0] = state.Section.StartPosition;
-                    triggerParams[1] = state.Section.EndPosition;
-                    triggerParams[2] = state.Section.Force;
+                    triggerParams[0] = state.SectionResistance.StartPosition;
+                    triggerParams[1] = state.SectionResistance.EndPosition;
+                    triggerParams[2] = state.SectionResistance.Force;
                     break;
                 case DualSenseTriggerEffectType.ResetResistance:
                     triggerMode = 0x05;
@@ -199,10 +199,6 @@ namespace UniSense.LowLevel
                     triggerParams[5] = state.EffectEx.EndForce;
                     triggerParams[8] = state.EffectEx.Frequency;
                     break;
-                //case DualSenseTriggerEffectType.Calibrate:
-                //    triggerMode = 0xFC;
-                //    ClearTriggerParams(triggerParams);
-                //    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

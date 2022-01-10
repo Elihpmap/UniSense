@@ -24,10 +24,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.2.3] - 2022-01-10
 
 ### Added
-- the possibility to set only one triggerState with the SetTriggerState() QuickSet (the other one can now be a null value)
+- The possibility to set only one triggerState with the SetTriggerState() QuickSet (the other one can now be a null value)
+- The bases for new Trigger Effect Types
+- Sources and thanks at the end of the README.md
 
 ### Fixed
 - Corrected DualSenseGamepadHID.FindCurrent() description
+
+### Changed 
+- TriggerState Struct is not serializable anymore instead another similar struct : DualSenseSerializableTriggerState, take that role as the original can still be Layout.explicit and thus memory light even with the newer TriggerEffectType
 
 
 ## [0.2.2] - 2022-01-05
