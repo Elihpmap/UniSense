@@ -186,13 +186,18 @@ namespace UniSense.LowLevel
                 case DualSenseTriggerEffectType.VibratingResistance:
                     ((EffectParameters)state.VibratingResistance).GetFormatedParameters(triggerParams);
                     break;
+
+                case DualSenseTriggerEffectType.Crunch:
+                    ((EffectParameters)state.Crunch).GetFormatedParameters(triggerParams);
+                    break;
+                case DualSenseTriggerEffectType.SnapBack:
+                    ((EffectParameters)state.SnapBack).GetFormatedParameters(triggerParams);
+                    break;
                 case DualSenseTriggerEffectType.EffectEx:
                     ((EffectParameters)state.EffectEx).GetFormatedParameters(triggerParams);
                     break;
-
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
+                case DualSenseTriggerEffectType.AmplitudeVibration:
+                    ((EffectParameters)state.AmplitudeVibration).GetFormatedParameters(triggerParams);
                     break;
 
                 default:

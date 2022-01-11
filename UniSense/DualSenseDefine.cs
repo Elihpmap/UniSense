@@ -85,8 +85,14 @@ namespace UniSense
         public DualSenseSectionResistanceProperties SectionResistance;
         [FieldOffset(1)] 
         public DualSenseVibratingResistanceProperties VibratingResistance;
-        [FieldOffset(1)] 
+        [FieldOffset(1)]
+        public DualSenseCrunchProperties Crunch;
+        [FieldOffset(1)]
+        public DualSenseSnapBackProperties SnapBack;
+        [FieldOffset(1)]
         public DualSenseEffectExProperties EffectEx;
+        [FieldOffset(1)]
+        public DualSenseAmplitudeVibrationProperties AmplitudeVibration;
 
 
         public DualSenseTriggerState(DualSenseTriggerState triggerState) : this()
@@ -114,14 +120,23 @@ namespace UniSense
                     this.VibratingResistance = triggerState.VibratingResistance;
                     break;
 
+                case DualSenseTriggerEffectType.Crunch:
+                    this.Crunch = triggerState.Crunch;
+                    break;
+
+                case DualSenseTriggerEffectType.SnapBack:
+                    this.SnapBack = triggerState.SnapBack;
+                    break;
+
                 case DualSenseTriggerEffectType.EffectEx:
                     this.EffectEx = triggerState.EffectEx;
                     break;
 
+                case DualSenseTriggerEffectType.AmplitudeVibration:
+                    this.AmplitudeVibration = triggerState.AmplitudeVibration;
+                    break;
+
                 default:
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
                     Debug.LogError("Unimplemented EffectType !");
                     break;
             }
@@ -142,28 +157,28 @@ namespace UniSense
     #region DualSenseTriggerState and DualSenseSerializableTriggerState sub-structures
     public enum DualSenseTriggerEffectType : byte
     {
-        // bit details :
+        // bit details : '>' means fully integrated and 'x' that it is not listed in this enum (yet?) 
 
-        // 00 00 0 000 = 0x00 => NoResistance (other non attributed values have the same effect)
+        // > 00 00 0 000 = 0x00 => NoResistance (other non attributed values have the same effect)
 
-        // 00 00 0 001 = 0x01 => ContinuousResistance
-        // 00 00 0 010 = 0x02 => SectionResistance
-        // 00 00 0 101 = 0x05 => Reset (with actuator withdraw)
-        // 00 00 0 110 = 0x06 => VibratingResistance
+        // > 00 00 0 001 = 0x01 => ContinuousResistance
+        // > 00 00 0 010 = 0x02 => SectionResistance
+        // > 00 00 0 101 = 0x05 => Reset (with actuator withdraw)
+        // > 00 00 0 110 = 0x06 => VibratingResistance
 
-        // 00 01 0 001 = 0x11 => ? (only referenced in Nielk1 trigger effect generators)
-        // 00 01 0 010 = 0x12 => ? (only referenced in Nielk1 trigger effect generators)
+        // x 00 01 0 001 = 0x11 => ? (only referenced in Nielk1 trigger effect generators)
+        // x 00 01 0 010 = 0x12 => ? (only referenced in Nielk1 trigger effect generators)
 
-        // 00 10 0 001 = 0x21 => Crunch (work in progress / poorly understood)
-        // 00 10 0 010 = 0x22 => SnapBack
-        // 00 10 0 011 = 0x23 => (work in progress / poorly understood) ??? 
-        // 00 10 0 101 = 0x25 => (work in progress / poorly understood) ???
-        // 00 10 0 110 = 0x26 => EffectEx (pre-fork integration is more complete than the documentation I could find but the parameters are not contiguous so it is probably still incomplete)
-        // 00 10 0 111 = 0x27 => AmplitudeVibration
+        //   00 10 0 001 = 0x21 => Crunch (work in progress / poorly understood)
+        // > 00 10 0 010 = 0x22 => SnapBack
+        // x 00 10 0 011 = 0x23 => (work in progress / poorly understood) ??? 
+        // x 00 10 0 101 = 0x25 => (work in progress / poorly understood) ???
+        //   00 10 0 110 = 0x26 => EffectEx (pre-fork integration is more complete than the documentation I could find but the parameters are not contiguous so it is probably still incomplete)
+        // > 00 10 0 111 = 0x27 => AmplitudeVibration
 
-        // 11 11 1 100 = 0xFC => Debug/Calibration value ?
-        // 11 11 1 101 = 0xFD => Debug/Calibration value ?
-        // 11 11 1 110 = 0xFE => Debug/Calibration value ?
+        // x 11 11 1 100 = 0xFC => Debug/Calibration value ?
+        // x 11 11 1 101 = 0xFD => Debug/Calibration value ?
+        // x 11 11 1 110 = 0xFE => Debug/Calibration value ?
 
         [Tooltip("[0x00] Stop the current currently programmed effect but (as opposed to ResetResistance) " +
             "do not withdraw the actuator.")]
@@ -180,11 +195,11 @@ namespace UniSense
         SectionResistance = 0x02,
 
         [Tooltip("[0x06] Vibration after entering high resistance region")]
-        VibratingResistance = 0x06, // temporary name ? //TODO
+        VibratingResistance = 0x06,
 
         [Tooltip("[0x21] (work in progress / poorly understood) " +
             "Resistance with slow recovery and optional resistance bumps")]
-        Crunch = 0x21, // temporary name ? //TODO
+        Crunch = 0x21,
 
         [Tooltip("[0x22] Resistance section with \"snap back\"")]
         SnapBack = 0x22, // temporary name ? //TODO
@@ -221,10 +236,10 @@ namespace UniSense
             "is higher than the end position(P1), only a brief impulse event is observed at P1, which is " +
             "unaffected by the force parameter (P2), but rather by how fast the trigger is pressed.")]
         public byte StartPosition;
-        [Range(0, 255), Tooltip("resistance end position (0=released state; 238 fully pressed) " +
+        [Range(0, 255), Tooltip("P1: resistance end position (0=released state; 238 fully pressed) " +
             "Trigger input report value 0 - 255 corresponds to p1 values 30 - 167.")]
         public byte EndPosition;
-        [Range(0, 255), Tooltip("Resistance force (0-255)")]
+        [Range(0, 255), Tooltip("P2: Resistance force (0-255)")]
         public byte Force;
 
         public unsafe void GetFormatedParameters(byte* triggerParams)
@@ -238,11 +253,11 @@ namespace UniSense
     [Serializable]
     public struct DualSenseVibratingResistanceProperties : EffectParameters
     {
-        [Range(0, 255), Tooltip("Vibration frequency in Hz (/!\\ increasingly spotty granularity when exceeding 36Hz).")]
+        [Range(0, 255), Tooltip("P0: Vibration frequency in Hz (/!\\ increasingly spotty granularity when exceeding 36Hz).")]
         public byte Frequency;
-        [Range(0, 255), Tooltip("Vibration strength (0-63 with 0 being off)")]
+        [Range(0, 255), Tooltip("P1: Vibration strength (0-63 with 0 being off)")]
         public byte VibrationStrength;
-        [Range(0, 255), Tooltip("Effect starting point (0=released; 137=resistance ramp starts at trigger value " +
+        [Range(0, 255), Tooltip("P2: Effect starting point (0=released; 137=resistance ramp starts at trigger value " +
             "0xd1(209).This is also the highest value that still allows the vibration section to be reached. Trigger " +
             "value range 0 - 255 corresponds to 26 - 168 for resistance. With a P2 value of 0, vibration section " +
             "starts at trigger value of ~0x10. At a P2 value of 255 the resistance ramp can still be felt.")]
@@ -252,6 +267,50 @@ namespace UniSense
             triggerParams[0] = Frequency;
             triggerParams[1] = VibrationStrength;
             triggerParams[3] = StartPosition;
+        }
+    }
+
+    [Serializable]
+    public struct DualSenseCrunchProperties : EffectParameters
+    {
+        //TODO find more obvious names
+        [ByteDisplay, Tooltip("P0: bit 1 = resistance; bit masks used up to 31?")]
+        public byte P0;
+        [Range(0, 255), Tooltip("P1: bit 1 to enable resistance bumps, bit 2 something else (can be combined)")]
+        public byte P1;
+        [Range(0, 255), Tooltip("P2: resistance buildup speed (0=slow; 255=fast) Only used when at least two " +
+            "bits are set in P0")]
+        public byte P2;
+        [Range(0, 255), Tooltip("P3: bit 1 adds two additional, smaller bumps before the one at ~80%")]
+        public byte P3;
+        [Range(0, 255), Tooltip("P4: some \"snappiness\" characteristic in the lower 6 bits, at least when " +
+            "everything else is 255.")]
+        public byte P4;
+        [Range(0, 255), Tooltip("P5: bits 1-3 force of resistance bumps (some other bits do also have some " +
+            "effect); bits 4-6 changes tactile feel for p1 bit 2")]
+        public byte P5;
+
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = P0;
+            triggerParams[1] = P1;
+            triggerParams[2] = P2;
+            triggerParams[3] = P3;
+            triggerParams[4] = P4;
+            triggerParams[5] = P5;
+        }
+    }
+
+    [Serializable]
+    public struct DualSenseSnapBackProperties : EffectParameters
+    {
+        //TODO
+        [Range(0, 255), Tooltip("")]
+        public byte P0;
+
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = P0;
         }
     }
 
@@ -280,6 +339,19 @@ namespace UniSense
             triggerParams[4] = MiddleForce;
             triggerParams[5] = EndForce;
             triggerParams[8] = Frequency;
+        }
+    }
+
+    [Serializable]
+    public struct DualSenseAmplitudeVibrationProperties : EffectParameters
+    {
+        //TODO
+        [Range(0, 255), Tooltip("")]
+        public byte P0;
+
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = P0;
         }
     }
     #endregion

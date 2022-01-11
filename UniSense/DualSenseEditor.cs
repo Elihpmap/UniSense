@@ -17,7 +17,10 @@ namespace UniSense
         public DualSenseContinuousResistanceProperties ContinuousResistance;
         public DualSenseSectionResistanceProperties SectionResistance;
         public DualSenseVibratingResistanceProperties VibratingResistance;
+        public DualSenseCrunchProperties Crunch;
+        public DualSenseSnapBackProperties SnapBack;
         public DualSenseEffectExProperties EffectEx;
+        public DualSenseAmplitudeVibrationProperties AmplitudeVibration;
 
 
         public DualSenseSerializableTriggerState(DualSenseSerializableTriggerState triggerState) : this()
@@ -45,14 +48,23 @@ namespace UniSense
                     this.VibratingResistance = triggerState.VibratingResistance;
                     break;
 
+                case DualSenseTriggerEffectType.Crunch:
+                    this.Crunch = triggerState.Crunch;
+                    break;
+
+                case DualSenseTriggerEffectType.SnapBack:
+                    this.SnapBack = triggerState.SnapBack;
+                    break;
+
                 case DualSenseTriggerEffectType.EffectEx:
                     this.EffectEx = triggerState.EffectEx;
                     break;
 
+                case DualSenseTriggerEffectType.AmplitudeVibration:
+                    this.AmplitudeVibration = triggerState.AmplitudeVibration;
+                    break;
+
                 default:
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
                     Debug.LogError("Unimplemented EffectType !");
                     break;
             }
@@ -61,12 +73,15 @@ namespace UniSense
            new DualSenseSerializableTriggerState(TS);
     }
 
-    
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public class ByteDisplay : PropertyAttribute { }
+
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(DualSenseSerializableTriggerState))]
     public class UniqueObjectLogicProperty : PropertyDrawer
     {
         bool isFoldout;
+        bool showWarningMessage;
         SerializedProperty effectType = null;
         SerializedProperty effectParameters;
 
@@ -74,7 +89,9 @@ namespace UniSense
         {
             if (effectType is null)
                 effectType = property.FindPropertyRelative("EffectType");
-            
+
+            showWarningMessage = false;
+
             switch ((DualSenseTriggerEffectType) effectType.intValue)
             {
                 case DualSenseTriggerEffectType.NoResistance:
@@ -90,21 +107,42 @@ namespace UniSense
                     effectParameters = property.FindPropertyRelative("SectionResistance");
                     break;
 
-                case DualSenseTriggerEffectType.VibratingResistance://TODO Add complete implementation
+                case DualSenseTriggerEffectType.VibratingResistance:
                     effectParameters = property.FindPropertyRelative("VibratingResistance");
+                    break;
+
+                case DualSenseTriggerEffectType.Crunch:
+                    effectParameters = property.FindPropertyRelative("Crunch");
+                    showWarningMessage = true;
+                    break;
+
+                case DualSenseTriggerEffectType.SnapBack:
+                    effectParameters = property.FindPropertyRelative("SnapBack");
                     break;
 
                 case DualSenseTriggerEffectType.EffectEx:
                     effectParameters = property.FindPropertyRelative("EffectEx");
+                    showWarningMessage = true;
+                    break;
+
+                case DualSenseTriggerEffectType.AmplitudeVibration:
+                    effectParameters = property.FindPropertyRelative("AmplitudeVibration");
                     break;
 
                 default:
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
                     Debug.LogError("Unimplemented Effect Type Value");
                     break;
             }
+        }
+
+        void ShowIndentedWarningBox(ref Rect subPos, string message)
+        {
+            float indentValue = EditorGUI.indentLevel * 15;
+            subPos.height = EditorGUIUtility.singleLineHeight * 2;
+            subPos.x += indentValue; subPos.width -= indentValue;
+            EditorGUI.HelpBox(subPos, message, MessageType.Warning);
+            subPos.x -= indentValue; subPos.width += indentValue;
+            subPos.y += subPos.height + EditorGUIUtility.standardVerticalSpacing;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -114,28 +152,39 @@ namespace UniSense
             Rect subPos = new Rect(position);
             EditorGUI.BeginProperty(position, label, property);
             subPos.height = EditorGUIUtility.singleLineHeight;
-            isFoldout = EditorGUI.BeginFoldoutHeaderGroup(subPos, isFoldout, label);
+            isFoldout = EditorGUI.BeginFoldoutHeaderGroup(subPos, isFoldout, label); 
+            subPos.y += subPos.height + EditorGUIUtility.standardVerticalSpacing;
             if (isFoldout)
             {
                 EditorGUI.indentLevel++;
                 
-                subPos.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-                subPos.height = EditorGUIUtility.singleLineHeight;
                 EditorGUI.PropertyField(subPos, effectType, new GUIContent("Effect Type"), true);
+                subPos.y += subPos.height + EditorGUIUtility.standardVerticalSpacing; 
                 
+                if (showWarningMessage)
+                {
+                    ShowIndentedWarningBox(ref subPos, "This Effect Type is not completely understood yet...\nBe careful!");
+                }
+
                 if (effectType.hasMultipleDifferentValues)
                 {
-                    subPos.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                    subPos.height = EditorGUIUtility.singleLineHeight;
                     EditorGUI.LabelField(subPos, "Cannot edit mutiple parameters when Effect Type is different");
                 }
                 else if (effectParameters != null)
                 {
-                    subPos.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
                     subPos.height = EditorGUI.GetPropertyHeight(effectParameters);
                     EditorGUI.PropertyField(subPos, effectParameters, 
                         new GUIContent("Effect Parameters", "Parameters of the effect, hover over them for more details"), true);
                 }
+                subPos.y += subPos.height + EditorGUIUtility.standardVerticalSpacing;
 
+                EditorGUI.indentLevel--;
+            }
+            else if (showWarningMessage)
+            {
+                EditorGUI.indentLevel++;
+                ShowIndentedWarningBox(ref subPos, "The selected Effect Type is not completely understood yet...\nBe careful!");
                 EditorGUI.indentLevel--;
             }
             EditorGUI.EndFoldoutHeaderGroup();
@@ -154,9 +203,69 @@ namespace UniSense
                     total += EditorGUIUtility.standardVerticalSpacing + EditorGUIUtility.singleLineHeight;
                 else if (effectParameters != null)
                     total += EditorGUIUtility.standardVerticalSpacing + EditorGUI.GetPropertyHeight(effectParameters);
+
             }
+            if (showWarningMessage)
+                total += EditorGUIUtility.standardVerticalSpacing + EditorGUIUtility.singleLineHeight * 2;
             return total;
         }
     }
+
+    [CustomPropertyDrawer(typeof(ByteDisplay))]
+    public class ByteDisplayPropertyDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            //if (property.type != "byte")
+            {
+                //Debug.LogError("The ByteDisplay attribute is only suited for byte type! " +
+                //    "It is not suitable for the property " + label.text);
+                EditorGUI.PropertyField(position, property);
+                return;
+            }
+
+            EditorGUI.BeginProperty(position, label, property);
+
+
+            position.width = EditorGUIUtility.labelWidth;
+            EditorGUI.LabelField(position, label);
+
+            position.x = EditorGUIUtility.labelWidth;
+            position.width = 50;
+           
+            byte value = (byte)property.intValue;
+            
+            for (int i = 0; i < 8; i++)
+            {
+                bool bitValue = (byte)(value & (1 << i)) != (byte)(1 << i);
+                Debug.Log((1 << i) + " with "+ value +" => " + (value & (1 << i)) + " then " + bitValue);
+                bitValue = EditorGUI.Toggle(position, bitValue);
+                Debug.Log("was " + value);
+                if (bitValue)
+                    value |= (byte)(1 << i);
+                else
+                    value &= (byte)(254 << i);
+                Debug.Log("is " + value);
+
+                position.x += EditorGUIUtility.singleLineHeight;
+            }
+
+            property.intValue = value;
+
+
+            position.width = 75;
+            EditorGUI.LabelField(position, "= " + value.ToString());
+
+            //EditorGUI.PropertyField(position, property, label, true);
+
+            EditorGUI.EndProperty();
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUIUtility.singleLineHeight;
+        }
+    }
+
 #endif
 }
