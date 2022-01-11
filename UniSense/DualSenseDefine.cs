@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using UnityEditor;
 using UnityEngine;
 
 namespace UniSense
@@ -70,60 +69,10 @@ namespace UniSense
         Pulsating,
     }
 
-    // 00 00 0 000 = 0x00 => NoResistance (other non attributed values have the same effect)
-
-    // 00 00 0 001 = 0x01 => ContinuousResistance
-    // 00 00 0 010 = 0x02 => SectionResistance
-    // 00 00 0 101 = 0x05 => Reset
-    // 00 00 0 110 = 0x06 => VibratingResistance
-
-    // 00 01 0 001 = 0x11 => ? (only referenced in Nielk1 trigger effect generators)
-    // 00 01 0 010 = 0x12 => ? (only referenced in Nielk1 trigger effect generators)
-
-    // 00 10 0 001 = 0x21 => Crunch (work in progress / poorly understood)
-    // 00 10 0 010 = 0x22 => SnapBack
-    // 00 10 0 011 = 0x23 => (work in progress / poorly understood) ??? 
-    // 00 10 0 100 = 0x25 => (work in progress / poorly understood) ???
-    // 00 10 0 101 = 0x26 => EffectEx (pre-fork integration is more complete than the documentation I could find but the parameters are not contiguous so it is probably still incomplete)
-    // 00 10 0 111 = 0x27 => AmplitudeVibration
-
-    // 11 11 1 100 = 0xFC => Debug/Calibration value ?
-    // 11 11 1 101 = 0xFD => Debug/Calibration value ?
-    // 11 11 1 110 = 0xFE => Debug/Calibration value ?
-
-    public enum DualSenseTriggerEffectType : byte
-    {
-        [Tooltip("[0x00] Stop the current currently programmed effect but (as opposed to ResetResistance), " +
-            "do not withdraw the actuator.")]
-        NoResistance = 0x00,
-
-        [Tooltip("[0x05] Used to fully disengage the effect AND withdraw the actuator.")]
-        ResetResistance = 0x05,
-
-        [Tooltip("[0x01] Uniform resistance with programmable starting position.")]
-        ContinuousResistance = 0x01,
-
-        [Tooltip("[0x02] Resistance section; after overcoming the resistance section, it will be " +
-            "re-engaged when reaching the configured resistance start P0.")]
-        SectionResistance = 0x02,
-
-        [Tooltip("[0x06] Vibration after entering high resistance region")]
-        VibratingResistance = 0x06, // temporary name //TODO
-
-        [Tooltip("[0x21] (work in progress / poorly understood) " +
-            "Resistance with slow recovery and optional resistance bumps")]
-        Crunch = 0x21, // temporary name //TODO
-
-        [Tooltip("[0x22] Resistance section with \"snap back\"")]
-        SnapBack = 0x22, // temporary name //TODO
-
-        [Tooltip("[0x26] (work in progress / poorly understood) Cycling effect")]
-        EffectEx = 0x26,
-
-        [Tooltip("[0x27] Fixed resistance with vibration section including amplitude cycling.")]
-        AmplitudeVibration = 0x27 // temporary name //TODO
-    }
-
+    /// <summary>
+    /// A struct to hold trigger state information : this struct is axed toward memory save, 
+    /// to have an inspector displayable version use <see cref="DualSenseSerializableTriggerState"/>
+    /// </summary>
     [StructLayout(LayoutKind.Explicit)]
     public struct DualSenseTriggerState
     {
@@ -134,6 +83,8 @@ namespace UniSense
         public DualSenseContinuousResistanceProperties ContinuousResistance;
         [FieldOffset(1)] 
         public DualSenseSectionResistanceProperties SectionResistance;
+        [FieldOffset(1)] 
+        public DualSenseVibratingResistanceProperties VibratingResistance;
         [FieldOffset(1)] 
         public DualSenseEffectExProperties EffectEx;
 
@@ -149,10 +100,6 @@ namespace UniSense
             {
                 case DualSenseTriggerEffectType.NoResistance:
                 case DualSenseTriggerEffectType.ResetResistance:
-                case DualSenseTriggerEffectType.VibratingResistance://TODO Add complete implementation
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
                     break;
 
                 case DualSenseTriggerEffectType.ContinuousResistance:
@@ -163,11 +110,18 @@ namespace UniSense
                     this.SectionResistance = triggerState.SectionResistance;
                     break;
 
+                case DualSenseTriggerEffectType.VibratingResistance:
+                    this.VibratingResistance = triggerState.VibratingResistance;
+                    break;
+
                 case DualSenseTriggerEffectType.EffectEx:
                     this.EffectEx = triggerState.EffectEx;
                     break;
 
                 default:
+                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
+                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
+                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
                     Debug.LogError("Unimplemented EffectType !");
                     break;
             }
@@ -176,57 +130,74 @@ namespace UniSense
            new DualSenseTriggerState(TS);
     }
 
-    // Having an explicit layout with different interpretation of the same data is incompatible with unity inspector
-    [Serializable]
-    public struct DualSenseSerializableTriggerState
+    /// <summary>
+    /// An interface to be implemented by the different structs detailing trigger effect parameter 
+    /// to provide a common way to format them to be sent to the gamepad via the HIDOutputReport
+    /// </summary>
+    public unsafe interface EffectParameters
     {
-        public DualSenseTriggerEffectType EffectType;
+        void GetFormatedParameters(byte* triggerParams);
+    }
 
-        public DualSenseContinuousResistanceProperties ContinuousResistance;
-        public DualSenseSectionResistanceProperties SectionResistance;
-        public DualSenseEffectExProperties EffectEx;
+    #region DualSenseTriggerState and DualSenseSerializableTriggerState sub-structures
+    public enum DualSenseTriggerEffectType : byte
+    {
+        // bit details :
 
+        // 00 00 0 000 = 0x00 => NoResistance (other non attributed values have the same effect)
 
-        public DualSenseSerializableTriggerState(DualSenseSerializableTriggerState triggerState) : this()
-        {
-            this = (DualSenseSerializableTriggerState)triggerState.MemberwiseClone();
-        }
-        public DualSenseSerializableTriggerState(DualSenseTriggerState triggerState) : this()
-        {
-            this.EffectType = triggerState.EffectType;
-            switch (this.EffectType)
-            {
-                case DualSenseTriggerEffectType.NoResistance:
-                case DualSenseTriggerEffectType.ResetResistance:
-                case DualSenseTriggerEffectType.VibratingResistance://TODO Add complete implementation
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
-                    break;
+        // 00 00 0 001 = 0x01 => ContinuousResistance
+        // 00 00 0 010 = 0x02 => SectionResistance
+        // 00 00 0 101 = 0x05 => Reset (with actuator withdraw)
+        // 00 00 0 110 = 0x06 => VibratingResistance
 
-                case DualSenseTriggerEffectType.ContinuousResistance:
-                    this.ContinuousResistance = triggerState.ContinuousResistance;
-                    break;
+        // 00 01 0 001 = 0x11 => ? (only referenced in Nielk1 trigger effect generators)
+        // 00 01 0 010 = 0x12 => ? (only referenced in Nielk1 trigger effect generators)
 
-                case DualSenseTriggerEffectType.SectionResistance:
-                    this.SectionResistance = triggerState.SectionResistance;
-                    break;
+        // 00 10 0 001 = 0x21 => Crunch (work in progress / poorly understood)
+        // 00 10 0 010 = 0x22 => SnapBack
+        // 00 10 0 011 = 0x23 => (work in progress / poorly understood) ??? 
+        // 00 10 0 101 = 0x25 => (work in progress / poorly understood) ???
+        // 00 10 0 110 = 0x26 => EffectEx (pre-fork integration is more complete than the documentation I could find but the parameters are not contiguous so it is probably still incomplete)
+        // 00 10 0 111 = 0x27 => AmplitudeVibration
 
-                case DualSenseTriggerEffectType.EffectEx:
-                    this.EffectEx = triggerState.EffectEx;
-                    break;
+        // 11 11 1 100 = 0xFC => Debug/Calibration value ?
+        // 11 11 1 101 = 0xFD => Debug/Calibration value ?
+        // 11 11 1 110 = 0xFE => Debug/Calibration value ?
 
-                default:
-                    Debug.LogError("Unimplemented EffectType !");
-                    break;
-            }
-        }
-        public static implicit operator DualSenseSerializableTriggerState(DualSenseTriggerState TS) =>
-           new DualSenseSerializableTriggerState(TS);
+        [Tooltip("[0x00] Stop the current currently programmed effect but (as opposed to ResetResistance) " +
+            "do not withdraw the actuator.")]
+        NoResistance = 0x00,
+
+        [Tooltip("[0x05] Used to fully disengage the effect AND withdraw the actuator.")]
+        ResetResistance = 0x05,
+
+        [Tooltip("[0x01] Uniform resistance with programmable starting position.")]
+        ContinuousResistance = 0x01,
+
+        [Tooltip("[0x02] Resistance section; after overcoming the resistance section, it will be " +
+            "re-engaged when reaching the configured resistance start P0.")]
+        SectionResistance = 0x02,
+
+        [Tooltip("[0x06] Vibration after entering high resistance region")]
+        VibratingResistance = 0x06, // temporary name ? //TODO
+
+        [Tooltip("[0x21] (work in progress / poorly understood) " +
+            "Resistance with slow recovery and optional resistance bumps")]
+        Crunch = 0x21, // temporary name ? //TODO
+
+        [Tooltip("[0x22] Resistance section with \"snap back\"")]
+        SnapBack = 0x22, // temporary name ? //TODO
+
+        [Tooltip("[0x26] (work in progress / poorly understood) Cycling effect")]
+        EffectEx = 0x26,
+
+        [Tooltip("[0x27] Fixed resistance with vibration section including amplitude cycling.")]
+        AmplitudeVibration = 0x27 // temporary name ? //TODO
     }
 
     [Serializable]
-    public struct DualSenseContinuousResistanceProperties
+    public struct DualSenseContinuousResistanceProperties : EffectParameters
     {
         [Range(0, 255), Tooltip("P0: start of resistance (0=released state; 238 fully pressed) " +
             "Trigger input report value range 0 - 255 corresponds to p0 values 30 - 172.")]
@@ -234,10 +205,16 @@ namespace UniSense
         [Range(0, 255), Tooltip("P1: Resistance force (0-255) This cannot be used to completely " +
             "disable the effect as 0 represents a low force.")]
         public byte Force;
+
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = StartPosition;
+            triggerParams[1] = Force;
+        }
     }
 
     [Serializable]
-    public struct DualSenseSectionResistanceProperties
+    public struct DualSenseSectionResistanceProperties : EffectParameters
     {
         [Range(0, 255), Tooltip("P0: resistance starting position (0=released state; 238 fully pressed) " +
             "Trigger input report value 0 - 255 corresponds to P0 values 30 - 167. If starting position(P0) " +
@@ -249,10 +226,37 @@ namespace UniSense
         public byte EndPosition;
         [Range(0, 255), Tooltip("Resistance force (0-255)")]
         public byte Force;
+
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = StartPosition;
+            triggerParams[1] = EndPosition;
+            triggerParams[2] = Force;
+        }
     }
 
     [Serializable]
-    public struct DualSenseEffectExProperties
+    public struct DualSenseVibratingResistanceProperties : EffectParameters
+    {
+        [Range(0, 255), Tooltip("Vibration frequency in Hz (/!\\ increasingly spotty granularity when exceeding 36Hz).")]
+        public byte Frequency;
+        [Range(0, 255), Tooltip("Vibration strength (0-63 with 0 being off)")]
+        public byte VibrationStrength;
+        [Range(0, 255), Tooltip("Effect starting point (0=released; 137=resistance ramp starts at trigger value " +
+            "0xd1(209).This is also the highest value that still allows the vibration section to be reached. Trigger " +
+            "value range 0 - 255 corresponds to 26 - 168 for resistance. With a P2 value of 0, vibration section " +
+            "starts at trigger value of ~0x10. At a P2 value of 255 the resistance ramp can still be felt.")]
+        public byte StartPosition;
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = Frequency;
+            triggerParams[1] = VibrationStrength;
+            triggerParams[3] = StartPosition;
+        }
+    }
+
+    [Serializable]
+    public struct DualSenseEffectExProperties : EffectParameters
     {
         //TODO complete Tooltips
         [Range(0, 255), Tooltip("")]
@@ -267,7 +271,18 @@ namespace UniSense
         public byte EndForce;
         [Range(0, 255), Tooltip("")]
         public byte Frequency;
+
+        public unsafe void GetFormatedParameters(byte* triggerParams)
+        {
+            triggerParams[0] = (byte)(0xff - StartPosition);
+            triggerParams[1] = (byte)(KeepEffect ? 0x02 : 0x00);
+            triggerParams[3] = BeginForce;
+            triggerParams[4] = MiddleForce;
+            triggerParams[5] = EndForce;
+            triggerParams[8] = Frequency;
+        }
     }
+    #endregion
 
     public enum PlayerLedBrightness
     {
@@ -306,99 +321,4 @@ namespace UniSense
             if (fade) Value |= FADE;
         }
     }
-    
-#if UNITY_EDITOR
-    [CustomPropertyDrawer(typeof(DualSenseSerializableTriggerState))]
-    public class UniqueObjectLogicProperty : PropertyDrawer
-    {
-        bool isFoldout;
-        SerializedProperty effectType = null;
-        SerializedProperty effectParameters;
-
-        void Init(SerializedProperty property)
-        {
-            if (effectType is null)
-                effectType = property.FindPropertyRelative("EffectType");
-            
-            switch ((DualSenseTriggerEffectType) effectType.intValue)
-            {
-                case DualSenseTriggerEffectType.ContinuousResistance:
-                    effectParameters = property.FindPropertyRelative("ContinuousResistance");
-                    break;
-
-                case DualSenseTriggerEffectType.SectionResistance:
-                    effectParameters = property.FindPropertyRelative("SectionResistance");
-                    break;
-
-                case DualSenseTriggerEffectType.EffectEx:
-                    effectParameters = property.FindPropertyRelative("EffectEx");
-                    break;
-
-                case DualSenseTriggerEffectType.NoResistance:
-                case DualSenseTriggerEffectType.ResetResistance:
-                case DualSenseTriggerEffectType.VibratingResistance://TODO Add complete implementation
-                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
-                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
-                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
-                    effectParameters = null;
-                    break;
-
-                default:
-                    Debug.LogError("Unimplemented Effect Type Value");
-                    break;
-            }
-        }
-
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {
-            Init(property);
-
-            Rect subPos = new Rect(position);
-            EditorGUI.BeginProperty(position, label, property);
-            subPos.height = EditorGUIUtility.singleLineHeight;
-            isFoldout = EditorGUI.BeginFoldoutHeaderGroup(subPos, isFoldout, label);
-            if (isFoldout)
-            {
-                EditorGUI.indentLevel++;
-                
-                subPos.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-                subPos.height = EditorGUIUtility.singleLineHeight;
-                EditorGUI.PropertyField(subPos, effectType, new GUIContent("Effect Type"), true);
-                
-                if (effectType.hasMultipleDifferentValues)
-                {
-                    subPos.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-                    EditorGUI.LabelField(subPos, "Cannot edit mutiple parameters when Effect Type is different");
-                }
-                else if (effectParameters != null)
-                {
-                    subPos.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-                    subPos.height = EditorGUI.GetPropertyHeight(effectParameters);
-                    EditorGUI.PropertyField(subPos, effectParameters, 
-                        new GUIContent("Effect Parameters", "Parameters of the effect, hover over them for more details"), true);
-                }
-
-                EditorGUI.indentLevel--;
-            }
-            EditorGUI.EndFoldoutHeaderGroup();
-            EditorGUI.EndProperty();
-        }
-
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            Init(property);
-
-            float total = EditorGUIUtility.singleLineHeight;
-            if (isFoldout)
-            {
-                total += EditorGUIUtility.standardVerticalSpacing + EditorGUIUtility.singleLineHeight; 
-                if (effectType.hasMultipleDifferentValues)
-                    total += EditorGUIUtility.standardVerticalSpacing + EditorGUIUtility.singleLineHeight;
-                else if (effectParameters != null)
-                    total += EditorGUIUtility.standardVerticalSpacing + EditorGUI.GetPropertyHeight(effectParameters);
-            }
-            return total;
-        }
-    }
-#endif
 }

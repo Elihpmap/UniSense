@@ -145,6 +145,14 @@ namespace UniSense.LowLevel
                     throw new ArgumentOutOfRangeException(nameof(state), state, null);
             }
         }
+        public void SetLeftTriggerState(DualSenseTriggerState state)
+        {
+            flags1 |= Flags1.LeftTrigger;
+            fixed (byte* p = leftTriggerParams)
+            {
+                SetTriggerState(state, ref leftTriggerMode, p);
+            }
+        }
 
         public void SetRightTriggerState(DualSenseTriggerState state)
         {
@@ -155,54 +163,43 @@ namespace UniSense.LowLevel
             }
         }
 
-        public void SetLeftTriggerState(DualSenseTriggerState state)
-        {
-            flags1 |= Flags1.LeftTrigger;
-            fixed (byte* p = leftTriggerParams)
-            {
-                SetTriggerState(state, ref leftTriggerMode, p);
-            }
-        }
-
         private void SetTriggerState(DualSenseTriggerState state, ref byte triggerMode, byte* triggerParams)
         {
+
+            triggerMode = (byte)state.EffectType;
+            ClearTriggerParams(triggerParams);
+
+            // TODO : a better way must exist (especially since they all implement the same EffectParameter
+            // interface and their data is stored at the same adress thanks to [FieldOffset(1)])
             switch (state.EffectType)
             {
                 case DualSenseTriggerEffectType.NoResistance:
-                    triggerMode = 0x00;
-                    ClearTriggerParams(triggerParams);
+                case DualSenseTriggerEffectType.ResetResistance:
                     break;
+
                 case DualSenseTriggerEffectType.ContinuousResistance:
-                    triggerMode = 0x01;
-                    ClearTriggerParams(triggerParams);
-                    triggerParams[0] = state.ContinuousResistance.StartPosition;
-                    triggerParams[1] = state.ContinuousResistance.Force;
+                    ((EffectParameters)state.ContinuousResistance).GetFormatedParameters(triggerParams);
                     break;
                 case DualSenseTriggerEffectType.SectionResistance:
-                    triggerMode = 0x02;
-                    ClearTriggerParams(triggerParams);
-                    triggerParams[0] = state.SectionResistance.StartPosition;
-                    triggerParams[1] = state.SectionResistance.EndPosition;
-                    triggerParams[2] = state.SectionResistance.Force;
+                    ((EffectParameters)state.SectionResistance).GetFormatedParameters(triggerParams);
                     break;
-                case DualSenseTriggerEffectType.ResetResistance:
-                    triggerMode = 0x05;
-                    ClearTriggerParams(triggerParams);
+                case DualSenseTriggerEffectType.VibratingResistance:
+                    ((EffectParameters)state.VibratingResistance).GetFormatedParameters(triggerParams);
                     break;
                 case DualSenseTriggerEffectType.EffectEx:
-                    triggerMode = 0x26;
-                    ClearTriggerParams(triggerParams);
-                    triggerParams[0] = (byte) (0xff - state.EffectEx.StartPosition);
-                    triggerParams[1] = (byte) (state.EffectEx.KeepEffect ? 0x02 : 0x00);
-                    triggerParams[3] = state.EffectEx.BeginForce;
-                    triggerParams[4] = state.EffectEx.MiddleForce;
-                    triggerParams[5] = state.EffectEx.EndForce;
-                    triggerParams[8] = state.EffectEx.Frequency;
+                    ((EffectParameters)state.EffectEx).GetFormatedParameters(triggerParams);
                     break;
+
+                case DualSenseTriggerEffectType.Crunch:             //TODO Add complete implementation
+                case DualSenseTriggerEffectType.SnapBack:           //TODO Add complete implementation
+                case DualSenseTriggerEffectType.AmplitudeVibration: //TODO Add complete implementation
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
+        
 
         private void ClearTriggerParams(byte* triggerParams)
         {

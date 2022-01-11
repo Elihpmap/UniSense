@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Some values can be changed outside of the plugin as it is mainly using shallow copies
 
 
+
+## [0.2.4] - 2022-01-11
+
+### Added
+- VibratingResistance Effect for the triggers (but not yet added to the sample project)
+
+### Changed
+- Separated from the define all the code concerning unity editor display (now in a new file called DualSenseEditor.cs)
+- United triggerStates parameters with their formatting in DualSenseDefine.cs
+
+
 ## [0.2.3] - 2022-01-10
 
 ### Added
