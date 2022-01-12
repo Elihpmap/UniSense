@@ -12,11 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Mics parameters implementation
 
 ### [Need to be] Fixed
-- Updated the Sample scene with the newer terms
 - Internal speaker volume setter (need to find the right flags)
 
 ### [Need to be] Changed
 - Use of UseLegacyRumble bool to a RumbleType enum {LegacyOnly (always sending legacy values even when 0), HDAndPause (discard any motor value but still automaticaly send 0 values whan HapticPaused is true), HDOnly (always discard motor values)}
+- Restandardisation of some name (especially TriggerEffects)
 
 ### [Need to be reviewed for] Security
 - Some values can be changed outside of the plugin as it is mainly using shallow copies
@@ -26,9 +26,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Crunch, SnapBack and AmplitudeVibration Effect for the triggers (some user accessible parameter still needs to be explicited and not (yet) added to the sample project)
+- DynamicResizableRange display in editor
 
 ### Fixed
 - Byte bit-per-bit display in editor
+- Updated the Sample scene with the newer terms
 
 
 ## [0.2.4] - 2022-01-11

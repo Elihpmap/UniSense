@@ -73,9 +73,7 @@ namespace UniSense
            new DualSenseSerializableTriggerState(TS);
     }
 
-    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
-    public class ByteDisplay : PropertyAttribute { }
-
+    #region DualSenseSerializableTriggerState custom inspector display
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(DualSenseSerializableTriggerState))]
     public class UniqueObjectLogicProperty : PropertyDrawer
@@ -210,7 +208,33 @@ namespace UniSense
             return total;
         }
     }
+#endif
 
+    #endregion
+    #region custom additionnal display attributes
+
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public class ByteDisplay : PropertyAttribute { }
+
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
+    public class DynamicDiscreteRange : PropertyAttribute
+    {
+        public int defaultMinValue;
+        public int defaultMaxValue;
+        public int minValuePropertyOffset = 0;
+        public int maxValuePropertyOffset = 0;
+        public string minValueProperty = null;
+        public string maxValueProperty = null;
+        public bool showInaccessibleValue = false;
+
+        public DynamicDiscreteRange(int defaultMinValue, int defaultMaxValue)
+        {
+            this.defaultMinValue = defaultMinValue;
+            this.defaultMaxValue = defaultMaxValue;
+        }
+    }
+
+#if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(ByteDisplay))]
     public class ByteDisplayPropertyDrawer : PropertyDrawer
     {
@@ -263,5 +287,84 @@ namespace UniSense
         }
     }
 
+    [CustomPropertyDrawer(typeof(DynamicDiscreteRange))]
+    public class DynamicDiscreteRangePropertyDrawer : PropertyDrawer
+    {
+        SerializedProperty findSiblingProperty(SerializedProperty baseProperty, string siblingPropertyName)
+        {
+            string baseParentPath = baseProperty.propertyPath.Substring(0, baseProperty.propertyPath.LastIndexOf('.')+1);
+            return baseProperty.serializedObject.FindProperty(baseParentPath + siblingPropertyName);
+        }
+
+        Vector2Int GetDynamicMinMax(DynamicDiscreteRange dynamicDiscreteRange, SerializedProperty property)
+        {
+            Vector2Int minMax = new Vector2Int(dynamicDiscreteRange.defaultMinValue, dynamicDiscreteRange.defaultMaxValue);
+
+            if (!(dynamicDiscreteRange.minValueProperty is null || dynamicDiscreteRange.minValueProperty == ""))
+            {
+                SerializedProperty minProp = findSiblingProperty(property, dynamicDiscreteRange.minValueProperty);
+                if (minProp != null)
+                    minMax.x = minProp.intValue + dynamicDiscreteRange.minValuePropertyOffset;
+                else
+                    Debug.LogError("DynamicDiscreteRangePropertyDrawer : couldn't find property : " + dynamicDiscreteRange.minValueProperty);
+            }
+
+            if (!(dynamicDiscreteRange.maxValueProperty is null || dynamicDiscreteRange.maxValueProperty == ""))
+            {
+                SerializedProperty maxProp = findSiblingProperty(property, dynamicDiscreteRange.maxValueProperty);
+                if (maxProp != null)
+                    minMax.y = maxProp.intValue + dynamicDiscreteRange.maxValuePropertyOffset;
+                else
+                    Debug.LogError("DynamicDiscreteRangePropertyDrawer : couldn't find property : " + dynamicDiscreteRange.maxValueProperty);
+            }
+
+            return minMax;
+        }
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {    
+            if (property.type != "int"
+                && property.type != "uint"
+                && property.type != "byte" 
+                && property.type != "sbyte"
+                && property.type != "byte"
+                && property.type != "short"
+                && property.type != "ushort")
+            {
+                Debug.LogError("The DynamicDiscreteRange attribute is only suited for non-long discrete type! " +
+                    "It is not suitable for the property " + label.text + " which detected type is \"" + property.type + "\"");
+                EditorGUI.PropertyField(position, property);
+                return;
+            }
+
+            DynamicDiscreteRange dynamicDiscreteRangeAttribute = attribute as DynamicDiscreteRange;
+
+            EditorGUI.BeginProperty(position, label, property);
+            
+            Vector2Int minMax = GetDynamicMinMax(dynamicDiscreteRangeAttribute, property);
+
+            if (dynamicDiscreteRangeAttribute.showInaccessibleValue)
+            {
+                EditorGUI.IntSlider(position, property, dynamicDiscreteRangeAttribute.defaultMinValue, dynamicDiscreteRangeAttribute.defaultMaxValue);
+            }
+            else
+            {
+                EditorGUI.IntSlider(position, property, minMax.x, minMax.y);
+            }
+
+            if (property.intValue < minMax.x)
+                property.intValue = minMax.x;
+            if (property.intValue > minMax.y)
+                property.intValue = minMax.y;
+
+            EditorGUI.EndProperty();
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUIUtility.singleLineHeight;
+        }
+    }
 #endif
+    #endregion
 }

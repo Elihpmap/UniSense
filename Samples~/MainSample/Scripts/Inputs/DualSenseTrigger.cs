@@ -17,34 +17,34 @@ namespace DualSenseSample.Inputs
         #region Continuous Resistance Properties
         public float LeftContinuousForce
         {
-            get => leftTriggerState.Continuous.Force;
-            set => leftTriggerState.Continuous.Force = (byte)(value * 255);
+            get => leftTriggerState.ContinuousResistance.Force;
+            set => leftTriggerState.ContinuousResistance.Force = (byte)(value * 255);
         }
 
         public float LeftContinuousStartPosition
         {
-            get => leftTriggerState.Continuous.StartPosition;
-            set => leftTriggerState.Continuous.StartPosition = (byte)(value * 255);
+            get => leftTriggerState.ContinuousResistance.StartPosition;
+            set => leftTriggerState.ContinuousResistance.StartPosition = (byte)(value * 255);
         }
         #endregion
 
         #region Section Resistance Properties
         public float LeftSectionForce
         {
-            get => leftTriggerState.Section.Force;
-            set => leftTriggerState.Section.Force = (byte)(value * 255);
+            get => leftTriggerState.SectionResistance.Force;
+            set => leftTriggerState.SectionResistance.Force = (byte)(value * 255);
         }
 
         public float LeftSectionStartPosition
         {
-            get => leftTriggerState.Section.StartPosition;
-            set => leftTriggerState.Section.StartPosition = (byte)(value * 255);
+            get => leftTriggerState.SectionResistance.StartPosition;
+            set => leftTriggerState.SectionResistance.StartPosition = (byte)(value * 255);
         }
 
         public float LeftSectionEndPosition
         {
-            get => leftTriggerState.Section.EndPosition;
-            set => leftTriggerState.Section.EndPosition = (byte)(value * 255);
+            get => leftTriggerState.SectionResistance.EndPosition;
+            set => leftTriggerState.SectionResistance.EndPosition = (byte)(value * 255);
         }
         #endregion
 
@@ -97,34 +97,34 @@ namespace DualSenseSample.Inputs
         #region Continuous Resistance Properties
         public float RightContinuousForce
         {
-            get => rightTriggerState.Continuous.Force;
-            set => rightTriggerState.Continuous.Force = (byte)(value * 255);
+            get => rightTriggerState.ContinuousResistance.Force;
+            set => rightTriggerState.ContinuousResistance.Force = (byte)(value * 255);
         }
 
         public float RightContinuousStartPosition
         {
-            get => rightTriggerState.Continuous.StartPosition;
-            set => rightTriggerState.Continuous.StartPosition = (byte)(value * 255);
+            get => rightTriggerState.ContinuousResistance.StartPosition;
+            set => rightTriggerState.ContinuousResistance.StartPosition = (byte)(value * 255);
         }
         #endregion
 
         #region Section Resistance Properties
         public float RightSectionForce
         {
-            get => rightTriggerState.Section.Force;
-            set => rightTriggerState.Section.Force = (byte)(value * 255);
+            get => rightTriggerState.SectionResistance.Force;
+            set => rightTriggerState.SectionResistance.Force = (byte)(value * 255);
         }
 
         public float RightSectionStartPosition
         {
-            get => rightTriggerState.Section.StartPosition;
-            set => rightTriggerState.Section.StartPosition = (byte)(value * 255);
+            get => rightTriggerState.SectionResistance.StartPosition;
+            set => rightTriggerState.SectionResistance.StartPosition = (byte)(value * 255);
         }
 
         public float RightSectionEndPosition
         {
-            get => rightTriggerState.Section.EndPosition;
-            set => rightTriggerState.Section.EndPosition = (byte)(value * 255);
+            get => rightTriggerState.SectionResistance.EndPosition;
+            set => rightTriggerState.SectionResistance.EndPosition = (byte)(value * 255);
         }
         #endregion
 
@@ -176,16 +176,16 @@ namespace DualSenseSample.Inputs
             {
                 EffectType = DualSenseTriggerEffectType.ContinuousResistance,
                 EffectEx = new DualSenseEffectExProperties(),
-                Section = new DualSenseSectionResistanceProperties(),
-                Continuous = new DualSenseContinuousResistanceProperties()
+                SectionResistance = new DualSenseSectionResistanceProperties(),
+                ContinuousResistance = new DualSenseContinuousResistanceProperties()
             };
 
             rightTriggerState = new DualSenseTriggerState
             {
                 EffectType = DualSenseTriggerEffectType.ContinuousResistance,
                 EffectEx = new DualSenseEffectExProperties(),
-                Section = new DualSenseSectionResistanceProperties(),
-                Continuous = new DualSenseContinuousResistanceProperties()
+                SectionResistance = new DualSenseSectionResistanceProperties(),
+                ContinuousResistance = new DualSenseContinuousResistanceProperties()
             };
         }
 

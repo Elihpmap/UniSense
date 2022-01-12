@@ -304,13 +304,11 @@ namespace UniSense
     [Serializable]
     public struct DualSenseSnapBackProperties : EffectParameters
     {
-        //TODO reformat the first three parameter to StartResistance and SnapBackPoint (for now this is only a test format)
-        [ByteDisplay, Tooltip("")]
-        public byte P0;
-        [ByteDisplay, Tooltip("")]
-        public byte P1;
-        [ByteDisplay, Tooltip("")]
-        public byte P2_and11000000;
+        [DynamicDiscreteRange(0, 8), Tooltip("Position of the start of the resistance")]
+        public byte Start;
+        [DynamicDiscreteRange(1, 9, minValueProperty = "Start", minValuePropertyOffset = 1, showInaccessibleValue = true), 
+            Tooltip("position of the SnapBack : 9 is not reachable")]
+        public byte End;
         [Range(0, 7), Tooltip("Resistance Force (3 bit)")]
         public byte ResistanceForce;
         [Range(0, 7), Tooltip("Snap back force (3 bit)")]
@@ -318,11 +316,14 @@ namespace UniSense
 
         public unsafe void GetFormatedParameters(byte* triggerParams)
         {
-            triggerParams[0] = P0;
-            triggerParams[1] = P1;
+            UInt16 StartEndValue = (UInt16)((1 << Start) | (1 << End));
+
+            // P0+P1 first ten bits : two extreme set bits define the effect section.
+
+            triggerParams[0] = (byte)((StartEndValue >> 0) & 0xff);
+            triggerParams[1] = (byte)((StartEndValue >> 8) & 0xff);
             triggerParams[2] = (byte)(((ResistanceForce & 0x07) << (3 * 0))
-                                      | ((SnapBackForce & 0x07) << (3 * 1))
-                                      | (P2_and11000000 & 0b_1100_0000));
+                                    | ((SnapBackForce   & 0x07) << (3 * 1)));
         }
     }
 
@@ -357,13 +358,11 @@ namespace UniSense
     [Serializable]
     public struct DualSenseAmplitudeVibrationProperties : EffectParameters
     {
-        //TODO reformat the first three parameter to start and end (for now this is only a test format)
-        [ByteDisplay, Tooltip("")]
-        public byte P0;
-        [ByteDisplay, Tooltip("")]
-        public byte P1;
-        [ByteDisplay, Tooltip("")]
-        public byte P2_and11000000;
+        [DynamicDiscreteRange(0, 8), Tooltip("Position of the start of the effect")]
+        public byte Start;
+        [DynamicDiscreteRange(1, 9, minValueProperty = "Start", minValuePropertyOffset = 1, showInaccessibleValue = true),
+            Tooltip("Position of the end of the effect")]
+        public byte End;
         [Range(0, 7), Tooltip("Cycle starting force (3 bit)")]
         public byte StrengthA;
         [Range(0, 7), Tooltip("Cycle peak force (3 bit)")]
@@ -378,11 +377,14 @@ namespace UniSense
 
         public unsafe void GetFormatedParameters(byte* triggerParams)
         {
-            triggerParams[0] = P0;
-            triggerParams[1] = P1;
+            UInt16 StartEndValue = (UInt16)((1 << Start) | (1 << End));
+
+            // P0+P1 first ten bits : two extreme set bits define the effect section.
+
+            triggerParams[0] = (byte)((StartEndValue >> 0) & 0xff);
+            triggerParams[1] = (byte)((StartEndValue >> 8) & 0xff);
             triggerParams[2] = (byte)(((StrengthA & 0x07) << (3 * 0))
-                                    | ((StrengthB & 0x07) << (3 * 1))
-                                    | (P2_and11000000 & 0b_1100_0000));
+                                    | ((StrengthB & 0x07) << (3 * 1)));
         }
     }
     #endregion
