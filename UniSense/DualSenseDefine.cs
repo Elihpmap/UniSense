@@ -202,13 +202,13 @@ namespace UniSense
         Crunch = 0x21,
 
         [Tooltip("[0x22] Resistance section with \"snap back\"")]
-        SnapBack = 0x22, // temporary name ? //TODO
+        SnapBack = 0x22,
 
         [Tooltip("[0x26] (work in progress / poorly understood) Cycling effect")]
         EffectEx = 0x26,
 
         [Tooltip("[0x27] Fixed resistance with vibration section including amplitude cycling.")]
-        AmplitudeVibration = 0x27 // temporary name ? //TODO
+        AmplitudeVibration = 0x27
     }
 
     [Serializable]
@@ -286,7 +286,7 @@ namespace UniSense
         [Range(0, 255), Tooltip("P4: some \"snappiness\" characteristic in the lower 6 bits, at least when " +
             "everything else is 255.")]
         public byte P4;
-        [Range(0, 255), Tooltip("P5: bits 1-3 force of resistance bumps (some other bits do also have some " +
+        [ByteDisplay, Tooltip("P5: bits 1-3 force of resistance bumps (some other bits do also have some " +
             "effect); bits 4-6 changes tactile feel for p1 bit 2")]
         public byte P5;
 
@@ -304,13 +304,25 @@ namespace UniSense
     [Serializable]
     public struct DualSenseSnapBackProperties : EffectParameters
     {
-        //TODO
-        [Range(0, 255), Tooltip("")]
+        //TODO reformat the first three parameter to StartResistance and SnapBackPoint (for now this is only a test format)
+        [ByteDisplay, Tooltip("")]
         public byte P0;
+        [ByteDisplay, Tooltip("")]
+        public byte P1;
+        [ByteDisplay, Tooltip("")]
+        public byte P2_and11000000;
+        [Range(0, 7), Tooltip("Resistance Force (3 bit)")]
+        public byte ResistanceForce;
+        [Range(0, 7), Tooltip("Snap back force (3 bit)")]
+        public byte SnapBackForce;
 
         public unsafe void GetFormatedParameters(byte* triggerParams)
         {
             triggerParams[0] = P0;
+            triggerParams[1] = P1;
+            triggerParams[2] = (byte)(((ResistanceForce & 0x07) << (3 * 0))
+                                      | ((SnapBackForce & 0x07) << (3 * 1))
+                                      | (P2_and11000000 & 0b_1100_0000));
         }
     }
 
@@ -345,13 +357,32 @@ namespace UniSense
     [Serializable]
     public struct DualSenseAmplitudeVibrationProperties : EffectParameters
     {
-        //TODO
-        [Range(0, 255), Tooltip("")]
+        //TODO reformat the first three parameter to start and end (for now this is only a test format)
+        [ByteDisplay, Tooltip("")]
         public byte P0;
+        [ByteDisplay, Tooltip("")]
+        public byte P1;
+        [ByteDisplay, Tooltip("")]
+        public byte P2_and11000000;
+        [Range(0, 7), Tooltip("Cycle starting force (3 bit)")]
+        public byte StrengthA;
+        [Range(0, 7), Tooltip("Cycle peak force (3 bit)")]
+        public byte StrengthB;
+        [Range(0, 255), Tooltip("P3: Vibration frequency in Hz")]
+        public byte Frequency;
+        [Range(0, 255), Tooltip("P4: Wave period in 100ms steps. The wave period position appears to be " +
+            "advanced as soon as the trigger is engaged.This means there is little to no control over the " +
+            "timing.\nDuring this wave period all the strength levels from Strength A to Strength B " +
+            "and back to Strength A are cycled through for equally long periods.")]
+        public byte WavePeriod;
 
         public unsafe void GetFormatedParameters(byte* triggerParams)
         {
             triggerParams[0] = P0;
+            triggerParams[1] = P1;
+            triggerParams[2] = (byte)(((StrengthA & 0x07) << (3 * 0))
+                                    | ((StrengthB & 0x07) << (3 * 1))
+                                    | (P2_and11000000 & 0b_1100_0000));
         }
     }
     #endregion

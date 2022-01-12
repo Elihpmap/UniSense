@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Mics parameters implementation
 
 ### [Need to be] Fixed
+- Updated the Sample scene with the newer terms
 - Internal speaker volume setter (need to find the right flags)
 
 ### [Need to be] Changed
@@ -21,11 +22,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Some values can be changed outside of the plugin as it is mainly using shallow copies
 
 
+## [0.2.5] - 2022-01-12
+
+### Added
+- Crunch, SnapBack and AmplitudeVibration Effect for the triggers (some user accessible parameter still needs to be explicited and not (yet) added to the sample project)
+
+### Fixed
+- Byte bit-per-bit display in editor
+
 
 ## [0.2.4] - 2022-01-11
 
 ### Added
-- VibratingResistance Effect for the triggers (but not yet added to the sample project)
+- VibratingResistance Effect for the triggers (but not (yet) added to the sample project)
+- Base for a byte bit-per-bit display in editor for not-yet-tested/understood trigger parameter values (still need debug)
 
 ### Changed
 - Separated from the define all the code concerning unity editor display (now in a new file called DualSenseEditor.cs)

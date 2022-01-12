@@ -216,36 +216,32 @@ namespace UniSense
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            //if (property.type != "byte")
+            if (property.type != "byte")
             {
-                //Debug.LogError("The ByteDisplay attribute is only suited for byte type! " +
-                //    "It is not suitable for the property " + label.text);
+                Debug.LogError("The ByteDisplay attribute is only suited for byte type! " +
+                    "It is not suitable for the property " + label.text);
                 EditorGUI.PropertyField(position, property);
                 return;
             }
 
             EditorGUI.BeginProperty(position, label, property);
 
-
             position.width = EditorGUIUtility.labelWidth;
             EditorGUI.LabelField(position, label);
 
-            position.x = EditorGUIUtility.labelWidth;
-            position.width = 50;
+            position.x = EditorGUIUtility.labelWidth - 10;
+            position.width = 45;
            
             byte value = (byte)property.intValue;
-            
-            for (int i = 0; i < 8; i++)
+
+            for (int i = 7; i >= 0; i--)
             {
-                bool bitValue = (byte)(value & (1 << i)) != (byte)(1 << i);
-                Debug.Log((1 << i) + " with "+ value +" => " + (value & (1 << i)) + " then " + bitValue);
+                bool bitValue = (value & (1 << i)) == (1 << i);
                 bitValue = EditorGUI.Toggle(position, bitValue);
-                Debug.Log("was " + value);
                 if (bitValue)
                     value |= (byte)(1 << i);
                 else
-                    value &= (byte)(254 << i);
-                Debug.Log("is " + value);
+                    value &= (byte)(255 ^ (1 << i));
 
                 position.x += EditorGUIUtility.singleLineHeight;
             }
@@ -253,8 +249,8 @@ namespace UniSense
             property.intValue = value;
 
 
-            position.width = 75;
-            EditorGUI.LabelField(position, "= " + value.ToString());
+            position.width = 150;
+            EditorGUI.LabelField(position, "= " + value.ToString() + " = 0x" + value.ToString("x"));
 
             //EditorGUI.PropertyField(position, property, label, true);
 
