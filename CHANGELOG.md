@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Crunch, SnapBack and AmplitudeVibration Effect for the triggers (some user accessible parameter still needs to be explicited and not (yet) added to the sample project)
 - DynamicResizableRange display in editor
+- A simple Utility Component to easily setup and test triggerStates
 
 ### Fixed
 - Byte bit-per-bit display in editor

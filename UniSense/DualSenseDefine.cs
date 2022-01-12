@@ -174,7 +174,7 @@ namespace UniSense
         // x 00 10 0 011 = 0x23 => (work in progress / poorly understood) ??? 
         // x 00 10 0 101 = 0x25 => (work in progress / poorly understood) ???
         //   00 10 0 110 = 0x26 => EffectEx (pre-fork integration is more complete than the documentation I could find but the parameters are not contiguous so it is probably still incomplete)
-        // > 00 10 0 111 = 0x27 => AmplitudeVibration
+        //   00 10 0 111 = 0x27 => AmplitudeVibration (the parameters doesn't seem to respond correctly...)
 
         // x 11 11 1 100 = 0xFC => Debug/Calibration value ?
         // x 11 11 1 101 = 0xFD => Debug/Calibration value ?

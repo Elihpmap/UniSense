@@ -125,6 +125,7 @@ namespace UniSense
 
                 case DualSenseTriggerEffectType.AmplitudeVibration:
                     effectParameters = property.FindPropertyRelative("AmplitudeVibration");
+                    showWarningMessage = true;
                     break;
 
                 default:
@@ -209,9 +210,9 @@ namespace UniSense
         }
     }
 #endif
-
     #endregion
-    #region custom additionnal display attributes
+
+    #region Custom additionnal display attributes
 
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public class ByteDisplay : PropertyAttribute { }
