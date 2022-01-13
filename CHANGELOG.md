@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### [Need to be] Fixed
 - Internal speaker volume setter (need to find the right flags)
+- multiEditing a DualSenseSerializableTriggerState property is impossible if any of their value differ (even if hidden) : probably comes from hasMultipleDifferentValues returns true
 
 ### [Need to be] Changed
 - Use of UseLegacyRumble bool to a RumbleType enum {LegacyOnly (always sending legacy values even when 0), HDAndPause (discard any motor value but still automaticaly send 0 values whan HapticPaused is true), HDOnly (always discard motor values)}

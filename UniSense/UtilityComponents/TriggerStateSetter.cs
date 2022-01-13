@@ -60,6 +60,7 @@ namespace UniSense
     {
         SerializedProperty triggerToSetProperty;
         SerializedProperty triggerStateProperty;
+        bool autoUpdate = false;
 
         private void OnEnable()
         {
@@ -75,15 +76,37 @@ namespace UniSense
             EditorGUILayout.PropertyField(triggerToSetProperty);
             EditorGUILayout.PropertyField(triggerStateProperty);
 
-            EditorGUI.BeginDisabledGroup(!Application.isPlaying);
-            if (GUILayout.Button(new GUIContent("Call Set(First_Dualsense)", "Must be in Play mode : the gamepad is not yet binded otherwise")))
+
+            EditorGUILayout.Space();
+
+            //AutoUpdate
+            if (!Application.isPlaying)
+            {
+                if (!serializedObject.isEditingMultipleObjects)
+                    autoUpdate = EditorGUILayout.Toggle(new GUIContent("Auto Update",
+                        "Automaticaly update the gamepad each time the component values are modified." +
+                        "\nThis is for test purposes and not available while in Play mode."), autoUpdate);
+                else
+                    EditorGUILayout.LabelField(new GUIContent("Auto Update",
+                        "Automaticaly update the gamepad each time the component values are modified." +
+                        "\nThis is for test purposes and not available while in Play mode."), 
+                        new GUIContent("Cannot use AutoUpdate while editing multiple object"));
+            }
+
+            if (autoUpdate && !Application.isPlaying && serializedObject.hasModifiedProperties)
+            {
+                (serializedObject.targetObject as TriggerStateSetter).Set(DualSenseGamepadHID.FindFirst());
+            }
+
+            //Button
+            if (GUILayout.Button(new GUIContent("Call Set(First_Dualsense)", 
+                "Sets the DualSenseGamepadHID.FindFirst() TriggerStates as specified by this component")))
             {
                 foreach (TriggerStateSetter setter in targets)
                 {
                     setter.Set(DualSenseGamepadHID.FindFirst());
                 }
             }
-            EditorGUI.EndDisabledGroup();
 
             serializedObject.ApplyModifiedProperties();
         }

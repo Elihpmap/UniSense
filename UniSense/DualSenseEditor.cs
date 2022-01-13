@@ -76,6 +76,7 @@ namespace UniSense
     #region DualSenseSerializableTriggerState custom inspector display
 #if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(DualSenseSerializableTriggerState))]
+    [CanEditMultipleObjects]
     public class UniqueObjectLogicProperty : PropertyDrawer
     {
         bool isFoldout;
