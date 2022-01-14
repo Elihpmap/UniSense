@@ -245,7 +245,7 @@ namespace UniSense
             if (property.type != "byte")
             {
                 Debug.LogError("The ByteDisplay attribute is only suited for byte type! " +
-                    "It is not suitable for the property " + label.text);
+                    "It is not suitable for the property " + label.text + " which detected type is \"" + property.type + "\"");
                 EditorGUI.PropertyField(position, property);
                 return;
             }
@@ -255,9 +255,9 @@ namespace UniSense
             position.width = EditorGUIUtility.labelWidth;
             EditorGUI.LabelField(position, label);
 
-            position.x = EditorGUIUtility.labelWidth - 10;
-            position.width = 45;
-           
+            position.x += position.width - (15 * EditorGUI.indentLevel);
+            position.width = 15 * (EditorGUI.indentLevel + 1); // ??? No idea why the width needs to be bigger if the content is indented, but otherwise the toggles are not hoverable nor clickable.
+
             byte value = (byte)property.intValue;
 
             for (int i = 7; i >= 0; i--)

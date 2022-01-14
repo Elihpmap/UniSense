@@ -34,8 +34,17 @@ namespace UniSense
         public ButtonControl micMuteButton { get; protected set; }
 
 
+        /// <summary>
+        /// Was the lattest update successfully send to the Dualsense
+        /// </summary>
         public bool UpdateSucceeded { get; private set; }
+        /// <summary>
+        /// The last time the Dualsense was successfully updated, in seconds (corresponding to <see cref="Time.realtimeSinceStartup"/>)
+        /// </summary>
         public float LastGamepadUpdateTime { get; private set; } = 0;
+        /// <summary>
+        /// Seconds since the Dualsense was last updated;
+        /// </summary>
         public float TimeSinceLastGamepadUpdate => Time.realtimeSinceStartup - LastGamepadUpdateTime;
 
         private DualSenseGamepadState _newState;
@@ -370,9 +379,26 @@ namespace UniSense
         public bool UpdateGamepad(bool forceUpdate = false)
         {
             DualSenseHIDOutputReport outputReport;
-            if ((stateModified || forceUpdate || UseLegacyHaptics) //this is a basic equivalent of the tests perfomed in CreateOutputReport() without the full creation thanks to lazy evaluation
-                && CreateOutputReport(CurrentGamepadState, NewState, out outputReport, !forceUpdate))
+            if (//(stateModified || forceUpdate || UseLegacyHaptics) //this is a basic equivalent of the tests perfomed in CreateOutputReport() without the full creation thanks to lazy evaluation
+                 CreateOutputReport(CurrentGamepadState, NewState, out outputReport, !forceUpdate))
             {
+                //TODO suppre
+                if (dirtyscript.instance != null )
+                {
+                    dirtyscript.instance.prevFlag1 = (byte)outputReport.flags1;
+                    outputReport.flags1 = (DualSenseHIDOutputReport.Flags1)dirtyscript.instance.flag1;
+                    dirtyscript.instance.prevFlag2 = (byte)outputReport.outputReportContent2;
+                    outputReport.outputReportContent2 = (DualSenseHIDOutputReport.Flags2)dirtyscript.instance.flag2;
+
+                    outputReport.externalVolume = dirtyscript.instance.externalVolume;
+                    outputReport.internalVolume = dirtyscript.instance.internalVolume;
+                    outputReport.micVolume = dirtyscript.instance.internalMicVolume;
+                    outputReport.audioFlags = (DualSenseHIDOutputReport.AudioFlags)dirtyscript.instance.audioFlags;
+
+                    outputReport.secondInternalVolume = dirtyscript.instance.secondInternalVolume;
+                }
+                //end suprre
+
                 long executeResult = ExecuteCommand(ref outputReport);
                 if (executeResult >= 0)
                 {
@@ -503,7 +529,7 @@ namespace UniSense
                 shouldPauseHapticAtNextUpdate = false;
             }
 
-            return updatedValues;
+            return true;// updatedValues;
         }
 
         /// <summary>

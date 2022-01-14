@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem.LowLevel;
@@ -17,44 +18,12 @@ namespace UniSense.LowLevel
         internal const int kTriggerParamSize = 9;
         internal const int kReportId = 2;
 
-        [Flags]
-        internal enum Flags1 : byte
-        {
-            MainMotors1 = 0x01,
-            MainMotors2 = 0x02,
-            RightTrigger = 0x04,
-            LeftTrigger = 0x08,
-            AudioVolume = 0x10,
-            InternalSpeaker = 0x20,   // 0x20 toggling of internal speaker while headset is connected
-            //MicVolume = 0x40,         // 0x40 modification of microphone volume
-            //InternalMic = 0x80        // 0x80 toggling of internal mic or external speaker while headset is connected
-        }
 
-        [Flags]
-        internal enum Flags2 : byte
-        {
-            MicLed = 0x01,
-            SetLightBarColor = 0x04,
-            PlayerLed = 0x10,
-        }
+        
 
-        [Flags]
-        internal enum AudioFlags : byte
-        {
-            // 0x01 = force use of internal controller mic (if neither 0x01 and 0x02 are set, an attached headset will take precedence)
-            // 0x02 = force use of mic attached to the controller (headset)
-            // 0x04 = pads left channel of external mic (~1/3rd of the volume? maybe the amount can be controlled?)
-            // 0x08 = pads left channel of internal mic (~1/3rd of the volume? maybe the amount can be controlled?)
-            disableExternalDevice = 0x10,   // 0x10 = disable attached headphones (only if 0x20 to enable internal speakers is provided as well)
-            enableInternalSpeaker = 0x20    // 0x20 = enable audio on internal speaker (in addition to a connected headset; headset will use a stereo upmix of the left channel, internal speaker will play the right channel)
-        }
 
-        internal enum InternalMicLedState : byte
-        {
-            Off = 0x00,
-            On = 0x01,
-            Pulsating = 0x02,
-        }
+
+
 
         [Flags]
         internal enum LedFlags : byte
@@ -73,29 +42,133 @@ namespace UniSense.LowLevel
         [FieldOffset(0)] public InputDeviceCommand baseCommand;
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 0)] public byte reportId;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public Flags1 flags1;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 2)] public Flags2 flags2;
+
+        //Globals flags
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public byte outputReportContent1;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 2)] public Flags2 outputReportContent2;
+        internal enum RumbleContent : byte // 2 lower bits (0b_0000_00xx)
+        {
+            AudioHaptics = 0x00,            // Stops emulated rumbles and switch back instantly to audio haptics
+            FadeBackToAudioHaptics = 0x01,  // Allow rumble to gracefully terminate and then re-enable audio haptics
+            EmulatedRumbles = 0x02,         // Emulated rumbles are allowed to time out without re-enabling audio haptics
+            NewEmulatedRumbles = 0x03,      // Allow to set new values for lowFrequencyMotorSpeed and highFrequencyMotorSpeed
+        }
+        [Flags] internal enum Flags1 : byte // 6 higher bits (0b_xxx_xx00)
+        {
+            AllowRightTriggerFFB = 0x04,    // Enable setting RightTriggerFFB section
+            AllowLeftTriggerFFB = 0x08,     // Enable setting LeftTriggerFFB section
+            AllowExternalVolume = 0x10,     // Enable setting externalVolume
+            AllowInternalVolume = 0x20,     // Enable setting internalVolume
+            AllowMicVolume = 0x40,          // Enable setting micVolume
+            AllowAudioControl = 0x80        // Enable setting AudioControl section
+        }
+        [Flags] internal enum Flags2 : byte
+        {
+            AllowMicMuteLightMode = 0x01,   // Enable setting micMuteLedMode
+            AllowMuteControl = 0x02,        // Enable setting MuteControl section
+            AllowLightBarColor = 0x04,      // Enable setting LightBarColor section
+            //ResetLights = 0x08,             // Release the LEDs from Wireless firmware control see Wiki for more info
+            AllowPlayerLed = 0x10,          // Enable setting PlayerLedIndicators section
+            //Unknown = 0x20,                 // 
+            AllowPowerReduction = 0x40,     // Enable setting powerReduction
+            AllowAudioControl2 = 0x80       // Enable setting AudioControl2 section
+        }
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte lowFrequencyMotorSpeed;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte highFrequencyMotorSpeed;
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 5)] public byte externalVolume; // volume of external device plugged in the controller jack
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 6)] public byte internalVolume; // volume of internal speaker of the controller
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte internalMicVolume; // internal microphone volume (not at all linear; 0-255, maxes out at 0x40, all values above are treated like 0x40;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioFlags audioFlags;
-
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 9)] public InternalMicLedState micLedState;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40, 0x00 is not fully muted);
         
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioControl audioControl; // SpeakerCompPreGain also present at + 38 
+        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)]
+        internal struct AudioControl
+        {
+            [FieldOffset(0)] public byte audioControl;
+
+
+            public enum MicSelect : byte //2 lower bits (0b_000_00xx)
+            {
+                Auto = 0x00,
+                InternalMic = 0x01,     // force use of internal controller mic (if neither 0x01 and 0x02 are set, an attached headset will take precedence)
+                ExternalMic = 0x02,     // force use of mic attached to the controller (headset) (if neither 0x01 and 0x02 are set, an attached headset will take precedence
+            }
+            [Flags] public enum MicEffect : byte // 2 higher bits of the lower nible (0b_0000_xx00)
+            {
+                EchoCancelEnable = 0x04,
+                NoiseCancelEnable = 0x08,
+            }
+            public enum OutputPathSelect : byte // 2 lower bits of the higher nible (0b_00xx_0000)
+            {
+                L_R_X = 0x00, // headphones has Left and Right channel, nothing on internal speaker
+                L_L_X = 0x10, // headphones has stereo upmix of Left channel, nothing on internal speaker
+                L_L_R = 0x20, // headphones has stereo upmix of Left channel, internal speaker has Right channel
+                X_X_R = 0x30  // nothing on headphones, internal speaker has Right channel
+            }
+            public enum InputPathSelect : byte // 2 higher bits (0b_xx00_0000)
+            { //TODO what's that ?
+                CHAT_ASR = 0x00,
+                CHAT_CHAT = 0x40,
+                ASR_ASR = 0x80,
+                //InvalidValue = 0xc0  // Does Nothing, invalid
+            }
+
+            public MicSelect micSelect
+            {
+                get { return (MicSelect)(audioControl & 0b_0000_0011); }
+                set { audioControl |= (byte)value; }
+            }
+            public MicEffect micControl
+            {
+                get { return (MicEffect)(audioControl & 0b_0000_1100); }
+                set { audioControl |= (byte)value; }
+            }
+
+            public OutputPathSelect outputPathSelect
+            { 
+                get { return (OutputPathSelect) (audioControl & 0b_0011_0000); }
+                set { audioControl |= (byte) value;}
+            }
+            public InputPathSelect inputPathSelect
+            {
+                get { return (InputPathSelect)(audioControl & 0b_1100_0000); }
+                set { audioControl |= (byte) value; }
+            }
+        }
+        
+        
+
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 9)] public MicMuteLedMode micMuteLedMode;
+        internal enum MicMuteLedMode : byte
+        {
+            Off = 0x00,
+            On = 0x01,
+            Breathing = 0x02,
+        }
+
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 10)] public MuteControl muteControl;
+        [Flags] internal enum MuteControl : byte
+        {
+            TouchPowerSave = 0x01,
+            MotionPowerSave = 0x02,
+            TriggersPowerSave = 0x04,
+            AudioPowerSave = 0x08,
+            MicMute = 0x10,
+            SpeakerMute = 0x20,
+            HeadphoneMute = 0X40,
+            TriggersMute = 0x80
+        }
+
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 11)] public byte rightTriggerMode;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 12)] public fixed byte rightTriggerParams[kTriggerParamSize];
-        
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 22)] public byte leftTriggerMode;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 23)] public fixed byte leftTriggerParams[kTriggerParamSize];
         
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 37)] public byte powerReduction;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 37)] public byte powerReduction; // (lower nibble: main motor; upper nibble trigger effects) 0x00 to 0x07 - reduce overall power of the respective motors/effects by 12.5% per increment (this does not affect the regular trigger motor settings, just the automatically repeating trigger effects)
 
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 37)] public byte secondInternalVolume;
-        
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 38)] public byte SpeakerCompPreGain; // additional speaker volume boost
+
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 39)] public LedFlags ledFlags;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 42)] public byte ledPulseOption;
 
@@ -110,7 +183,7 @@ namespace UniSense.LowLevel
 
         public void SetMotorSpeeds(float lowFreq, float highFreq)
         {
-            flags1 |= Flags1.MainMotors1 | Flags1.MainMotors2;
+            flags1 |= Flags1.EnableRumbleEmulation | Flags1.UseRumbleNotHaptics;
             lowFrequencyMotorSpeed = (byte)Mathf.Clamp(lowFreq * 255, 0, 255);
             highFrequencyMotorSpeed = (byte)Mathf.Clamp(highFreq * 255, 0, 255);
         }
@@ -119,27 +192,27 @@ namespace UniSense.LowLevel
         {
             if (resetImmediately)
             {
-                flags1 &= ~(Flags1.MainMotors1 | Flags1.MainMotors2);
+                flags1 &= ~(Flags1.EnableRumbleEmulation | Flags1.UseRumbleNotHaptics);
             }
             else
             {
-                flags1 &= ~Flags1.MainMotors2;
+                flags1 &= ~Flags1.UseRumbleNotHaptics;
             }
         }
 
         public void SetMicLedState(DualSenseMicLedState state)
         {
-            flags2 |= Flags2.MicLed;
+            outputReportContent2 |= Flags2.AllowMicMuteLightMode;
             switch (state)
             {
                 case DualSenseMicLedState.Off:
-                    micLedState = InternalMicLedState.Off;
+                    micMuteLedMode = MicMuteLedMode.Off;
                     break;
                 case DualSenseMicLedState.On:
-                    micLedState = InternalMicLedState.On;
+                    micMuteLedMode = MicMuteLedMode.On;
                     break;
                 case DualSenseMicLedState.Pulsating:
-                    micLedState = InternalMicLedState.Pulsating;
+                    micMuteLedMode = MicMuteLedMode.Breathing;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(state), state, null);
@@ -147,7 +220,7 @@ namespace UniSense.LowLevel
         }
         public void SetLeftTriggerState(DualSenseTriggerState state)
         {
-            flags1 |= Flags1.LeftTrigger;
+            flags1 |= Flags1.AllowLeftTriggerFFB;
             fixed (byte* p = leftTriggerParams)
             {
                 SetTriggerState(state, ref leftTriggerMode, p);
@@ -156,7 +229,7 @@ namespace UniSense.LowLevel
 
         public void SetRightTriggerState(DualSenseTriggerState state)
         {
-            flags1 |= Flags1.RightTrigger;
+            flags1 |= Flags1.AllowRightTriggerFFB;
             fixed (byte* p = rightTriggerParams)
             {
                 SetTriggerState(state, ref rightTriggerMode, p);
@@ -216,7 +289,7 @@ namespace UniSense.LowLevel
 
         public void SetLightBarColor(Color color)
         {
-            flags2 |= Flags2.SetLightBarColor;
+            outputReportContent2 |= Flags2.AllowLightBarColor;
             ledFlags |= LedFlags.LightBarFade;
             ledPulseOption = 0x02;
             lightBarRed = (byte) Mathf.Clamp(color.r * 255, 0, 255);
@@ -246,7 +319,7 @@ namespace UniSense.LowLevel
 
         public void SetPlayerLedState(PlayerLedState state)
         {
-            flags2 |= Flags2.PlayerLed;
+            outputReportContent2 |= Flags2.AllowPlayerLed;
             ledPulseOption = 0x02;
             playerLedState = state.Value;
         }
@@ -265,7 +338,7 @@ namespace UniSense.LowLevel
         /// <param name="volume"></param>
         public void SetInternalVolume(float volume)
         {
-            flags1 |= Flags1.AudioVolume | Flags1.InternalSpeaker;
+            flags1 |= Flags1.AllowExternalVolume | Flags1.AllowInternalVolume;
             audioFlags |= AudioFlags.enableInternalSpeaker;
             internalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
             secondInternalVolume = (byte)Mathf.Clamp(volume * 0, 0, 7);
@@ -273,7 +346,7 @@ namespace UniSense.LowLevel
 
         public void SetExternalDeviceVolume(float volume)
         {
-            flags1 |= Flags1.AudioVolume;
+            flags1 |= Flags1.AllowExternalVolume;
             externalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
         }
 
