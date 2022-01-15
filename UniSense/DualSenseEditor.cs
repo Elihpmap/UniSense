@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,51 +26,23 @@ namespace UniSense
 
         public DualSenseSerializableTriggerState(DualSenseSerializableTriggerState triggerState) : this()
         {
-            this = (DualSenseSerializableTriggerState)triggerState.MemberwiseClone();
+            this = triggerState;
         }
         public DualSenseSerializableTriggerState(DualSenseTriggerState triggerState) : this()
         {
             this.EffectType = triggerState.EffectType;
-            switch (this.EffectType)
+
+            if (EffectType != DualSenseTriggerEffectType.NoResistance
+                && EffectType != DualSenseTriggerEffectType.ResetResistance)
             {
-                case DualSenseTriggerEffectType.NoResistance:
-                case DualSenseTriggerEffectType.ResetResistance:
-                    break;
-
-                case DualSenseTriggerEffectType.ContinuousResistance:
-                    this.ContinuousResistance = triggerState.ContinuousResistance;
-                    break;
-
-                case DualSenseTriggerEffectType.SectionResistance:
-                    this.SectionResistance = triggerState.SectionResistance;
-                    break;
-
-                case DualSenseTriggerEffectType.VibratingResistance:
-                    this.VibratingResistance = triggerState.VibratingResistance;
-                    break;
-
-                case DualSenseTriggerEffectType.Crunch:
-                    this.Crunch = triggerState.Crunch;
-                    break;
-
-                case DualSenseTriggerEffectType.SnapBack:
-                    this.SnapBack = triggerState.SnapBack;
-                    break;
-
-                case DualSenseTriggerEffectType.EffectEx:
-                    this.EffectEx = triggerState.EffectEx;
-                    break;
-
-                case DualSenseTriggerEffectType.AmplitudeVibration:
-                    this.AmplitudeVibration = triggerState.AmplitudeVibration;
-                    break;
-
-                default:
-                    Debug.LogError("Unimplemented EffectType !");
-                    break;
+                FieldInfo thisEffectParameters = typeof(DualSenseSerializableTriggerState).GetField(EffectType.ToString());
+                FieldInfo otherEffectParameters = typeof(DualSenseTriggerState).GetField(EffectType.ToString());
+                object BoxedTriggerState = this; //need boxing otherwise 'this' is a value and is copied, not refered to SetValue()
+                thisEffectParameters.SetValue(this, otherEffectParameters.GetValue(triggerState));
+                this = (DualSenseSerializableTriggerState)BoxedTriggerState;
             }
         }
-        public static implicit operator DualSenseSerializableTriggerState(DualSenseTriggerState TS) =>
+        public static explicit operator DualSenseSerializableTriggerState(DualSenseTriggerState TS) =>
            new DualSenseSerializableTriggerState(TS);
     }
 
@@ -91,47 +64,16 @@ namespace UniSense
 
             showWarningMessage = false;
 
-            switch ((DualSenseTriggerEffectType) effectType.intValue)
+            if ((DualSenseTriggerEffectType)effectType.intValue == DualSenseTriggerEffectType.NoResistance
+                || (DualSenseTriggerEffectType)effectType.intValue == DualSenseTriggerEffectType.ResetResistance)
             {
-                case DualSenseTriggerEffectType.NoResistance:
-                case DualSenseTriggerEffectType.ResetResistance:
-                    effectParameters = null;
-                    break;
-
-                case DualSenseTriggerEffectType.ContinuousResistance:
-                    effectParameters = property.FindPropertyRelative("ContinuousResistance");
-                    break;
-
-                case DualSenseTriggerEffectType.SectionResistance:
-                    effectParameters = property.FindPropertyRelative("SectionResistance");
-                    break;
-
-                case DualSenseTriggerEffectType.VibratingResistance:
-                    effectParameters = property.FindPropertyRelative("VibratingResistance");
-                    break;
-
-                case DualSenseTriggerEffectType.Crunch:
-                    effectParameters = property.FindPropertyRelative("Crunch");
-                    showWarningMessage = true;
-                    break;
-
-                case DualSenseTriggerEffectType.SnapBack:
-                    effectParameters = property.FindPropertyRelative("SnapBack");
-                    break;
-
-                case DualSenseTriggerEffectType.EffectEx:
-                    effectParameters = property.FindPropertyRelative("EffectEx");
-                    showWarningMessage = true;
-                    break;
-
-                case DualSenseTriggerEffectType.AmplitudeVibration:
-                    effectParameters = property.FindPropertyRelative("AmplitudeVibration");
-                    showWarningMessage = true;
-                    break;
-
-                default:
+                effectType = null; 
+            }
+            else
+            {
+                effectParameters = property.FindPropertyRelative(((DualSenseTriggerEffectType)effectType.intValue).ToString());
+                if (effectParameters == null)
                     Debug.LogError("Unimplemented Effect Type Value");
-                    break;
             }
         }
 
@@ -267,7 +209,7 @@ namespace UniSense
                 if (bitValue)
                     value |= (byte)(1 << i);
                 else
-                    value &= (byte)(255 ^ (1 << i));
+                    value &= (byte)~(1 << i);
 
                 position.x += EditorGUIUtility.singleLineHeight;
             }

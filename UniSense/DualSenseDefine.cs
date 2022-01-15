@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
@@ -97,49 +98,23 @@ namespace UniSense
 
         public DualSenseTriggerState(DualSenseTriggerState triggerState) : this()
         {
-            this = (DualSenseTriggerState)triggerState.MemberwiseClone();
+            this = triggerState;
         }
         public DualSenseTriggerState(DualSenseSerializableTriggerState triggerState) : this()
         {
             this.EffectType = triggerState.EffectType;
-            switch (this.EffectType)
+
+            if (EffectType != DualSenseTriggerEffectType.NoResistance
+                && EffectType != DualSenseTriggerEffectType.ResetResistance)
             {
-                case DualSenseTriggerEffectType.NoResistance:
-                case DualSenseTriggerEffectType.ResetResistance:
-                    break;
-
-                case DualSenseTriggerEffectType.ContinuousResistance:
-                    this.ContinuousResistance = triggerState.ContinuousResistance;
-                    break;
-
-                case DualSenseTriggerEffectType.SectionResistance:
-                    this.SectionResistance = triggerState.SectionResistance;
-                    break;
-
-                case DualSenseTriggerEffectType.VibratingResistance:
-                    this.VibratingResistance = triggerState.VibratingResistance;
-                    break;
-
-                case DualSenseTriggerEffectType.Crunch:
-                    this.Crunch = triggerState.Crunch;
-                    break;
-
-                case DualSenseTriggerEffectType.SnapBack:
-                    this.SnapBack = triggerState.SnapBack;
-                    break;
-
-                case DualSenseTriggerEffectType.EffectEx:
-                    this.EffectEx = triggerState.EffectEx;
-                    break;
-
-                case DualSenseTriggerEffectType.AmplitudeVibration:
-                    this.AmplitudeVibration = triggerState.AmplitudeVibration;
-                    break;
-
-                default:
-                    Debug.LogError("Unimplemented EffectType !");
-                    break;
+                FieldInfo thisEffectParameters = typeof(DualSenseTriggerState).GetField(EffectType.ToString());
+                FieldInfo otherEffectParameters = typeof(DualSenseSerializableTriggerState).GetField(EffectType.ToString());
+                object BoxedTriggerState = this; //need boxing otherwise 'this' is a value and is copied, not refered to SetValue()
+                thisEffectParameters.SetValue(BoxedTriggerState, otherEffectParameters.GetValue(triggerState));
+                this = (DualSenseTriggerState)BoxedTriggerState;
             }
+
+            this = new DualSenseTriggerState(this);
         }
         public static implicit operator DualSenseTriggerState(DualSenseSerializableTriggerState TS) =>
            new DualSenseTriggerState(TS);
@@ -155,6 +130,10 @@ namespace UniSense
     }
 
     #region DualSenseTriggerState and DualSenseSerializableTriggerState sub-structures
+    /// <summary>
+    /// The type of effect currently parametered
+    /// Carefull : Names corresponds to fields name of <see cref="DualSenseTriggerState"/> and <see cref="DualSenseSerializableTriggerState"/>
+    /// </summary>
     public enum DualSenseTriggerEffectType : byte
     {
         // bit details : '>' means fully integrated and 'x' that it is not listed in this enum (yet?) 
@@ -179,6 +158,7 @@ namespace UniSense
         // x 11 11 1 100 = 0xFC => Debug/Calibration value ?
         // x 11 11 1 101 = 0xFD => Debug/Calibration value ?
         // x 11 11 1 110 = 0xFE => Debug/Calibration value ?
+
 
         [Tooltip("[0x00] Stop the current currently programmed effect but (as opposed to ResetResistance) " +
             "do not withdraw the actuator.")]

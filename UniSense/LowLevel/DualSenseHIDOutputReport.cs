@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Specialized;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem.LowLevel;
@@ -57,23 +58,23 @@ namespace UniSense.LowLevel
             public RumbleContent rumbleContent
             {
                 get { return (RumbleContent)(outputReportContent & 0b_0000_0000_0000_0011); }
-                set { outputReportContent = (UInt16)value; }
+                set { outputReportContent = (UInt16)((outputReportContent & 0b_1111_1111_1111_1100) | (UInt16)value); }
             }
             public ContentFlags contentFlags
             {
                 get { return (ContentFlags)(outputReportContent & 0b_1111_1111_1111_1100); }
-                set { outputReportContent = (UInt16)value; }
+                set { outputReportContent = (UInt16)((outputReportContent & 0b_0000_0000_0000_0011) | (UInt16)value); }
             }
         }
 
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte lowFrequencyMotorSpeed; // 0-255, Emulated by the Right VoiceCoil
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte highFrequencyMotorSpeed; // 0-255, Emulated by the Left VoiceCoil
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte RumbleEmulationLowRight; // 0-255, Emulated Low frequency rumbles by the Right VoiceCoil
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte RumbleEmulationHighLeft; // 0-255, Emulated High frequency rumbles by the Left VoiceCoil
 
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 5)] public byte externalVolume; // volume of external device plugged in the controller jack
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 6)] public byte internalVolume; // volume of internal speaker of the controller
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40, 0x00 is not fully muted);
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 5)] public byte externalVolume; // volume of external device plugged in the controller jack (max 0x7f = 127)
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 6)] public byte internalVolume; // volume of internal speaker of the controller (PS5 appears to only use the range 0x3d-0x64 = 61-100)
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40 = 64, 0x00 is not fully muted);
         
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioControl audioControl; // SpeakerCompPreGain also present at + 38 
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioControl audioControl; // SpeakerCompPreGain also present at [FieldOffset(K + 38)]
         [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)] internal struct AudioControl
         {
             [FieldOffset(0)] public byte audioControl;
@@ -107,22 +108,22 @@ namespace UniSense.LowLevel
             public MicSelect micSelect
             {
                 get { return (MicSelect)(audioControl & 0b_0000_0011); }
-                set { audioControl = (byte) value; }
+                set { audioControl = (byte)((audioControl & 0b_1111_1100) | (byte)value); }
             }
             public MicEffect micControl
             {
                 get { return (MicEffect)(audioControl & 0b_0000_1100); }
-                set { audioControl = (byte) value; }
+                set { audioControl = (byte)((audioControl & 0b_1111_0011) | (byte)value); }
             }
             public OutputPathSelect outputPathSelect
             { 
                 get { return (OutputPathSelect) (audioControl & 0b_0011_0000); }
-                set { audioControl = (byte) value;}
+                set { audioControl = (byte)((audioControl & 0b_1100_1111) | (byte)value); }
             }
             public InputPathSelect inputPathSelect
             {
                 get { return (InputPathSelect)(audioControl & 0b_1100_0000); }
-                set { audioControl = (byte) value; }
+                set { audioControl = (byte)((audioControl & 0b_0011_1111) | (byte)value); }
             }
         }
         
@@ -189,8 +190,8 @@ namespace UniSense.LowLevel
         public void SetMotorSpeeds(float lowFreq, float highFreq)
         {
             outputReportContent.rumbleContent = OutputReportContent.RumbleContent.NewEmulatedRumbles;
-            lowFrequencyMotorSpeed = (byte)Mathf.Clamp(lowFreq * 255, 0, 255);
-            highFrequencyMotorSpeed = (byte)Mathf.Clamp(highFreq * 255, 0, 255);
+            RumbleEmulationLowRight = (byte)Mathf.Clamp(lowFreq * 255, 0, 255);
+            RumbleEmulationHighLeft = (byte)Mathf.Clamp(highFreq * 255, 0, 255);
         }
 
         public void ResetMotorSpeeds(bool resetImmediately = false)
@@ -247,39 +248,11 @@ namespace UniSense.LowLevel
             triggerMode = (byte)state.EffectType;
             ClearTriggerParams(triggerParams);
 
-            // TODO : a better way must exist (especially since they all implement the same EffectParameter
-            // interface and their data is stored at the same adress thanks to [FieldOffset(1)])
-            switch (state.EffectType)
+            if (state.EffectType != DualSenseTriggerEffectType.NoResistance 
+                && state.EffectType != DualSenseTriggerEffectType.ResetResistance)
             {
-                case DualSenseTriggerEffectType.NoResistance:
-                case DualSenseTriggerEffectType.ResetResistance:
-                    break;
-
-                case DualSenseTriggerEffectType.ContinuousResistance:
-                    ((EffectParameters)state.ContinuousResistance).GetFormatedParameters(triggerParams);
-                    break;
-                case DualSenseTriggerEffectType.SectionResistance:
-                    ((EffectParameters)state.SectionResistance).GetFormatedParameters(triggerParams);
-                    break;
-                case DualSenseTriggerEffectType.VibratingResistance:
-                    ((EffectParameters)state.VibratingResistance).GetFormatedParameters(triggerParams);
-                    break;
-
-                case DualSenseTriggerEffectType.Crunch:
-                    ((EffectParameters)state.Crunch).GetFormatedParameters(triggerParams);
-                    break;
-                case DualSenseTriggerEffectType.SnapBack:
-                    ((EffectParameters)state.SnapBack).GetFormatedParameters(triggerParams);
-                    break;
-                case DualSenseTriggerEffectType.EffectEx:
-                    ((EffectParameters)state.EffectEx).GetFormatedParameters(triggerParams);
-                    break;
-                case DualSenseTriggerEffectType.AmplitudeVibration:
-                    ((EffectParameters)state.AmplitudeVibration).GetFormatedParameters(triggerParams);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
+                FieldInfo effectParameters = state.GetType().GetField(state.EffectType.ToString());
+                ((EffectParameters)effectParameters.GetValue(state)).GetFormatedParameters(triggerParams);
             }
         }
         

@@ -326,7 +326,7 @@ namespace UniSense
                     Debug.LogError("Unknown value or not implemented!");
                     break;
             }
-            Debug.Log("received " + volume + "  for " + target.ToString());
+            //Debug.Log("received " + volume + "  for " + target.ToString());
 
             UpdateState(gamepadState, updateGamepad);
         }
@@ -529,7 +529,7 @@ namespace UniSense
                 shouldPauseHapticAtNextUpdate = false;
             }
 
-            return true;// updatedValues;
+            return updatedValues;
         }
 
         /// <summary>
