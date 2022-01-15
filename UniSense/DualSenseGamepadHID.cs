@@ -382,7 +382,7 @@ namespace UniSense
             if (//(stateModified || forceUpdate || UseLegacyHaptics) //this is a basic equivalent of the tests perfomed in CreateOutputReport() without the full creation thanks to lazy evaluation
                  CreateOutputReport(CurrentGamepadState, NewState, out outputReport, !forceUpdate))
             {
-                //TODO suppre
+                /*TODO suppre
                 if (dirtyscript.instance != null )
                 {
                     dirtyscript.instance.prevFlag1 = (byte)outputReport.flags1;
@@ -397,7 +397,7 @@ namespace UniSense
 
                     outputReport.secondInternalVolume = dirtyscript.instance.secondInternalVolume;
                 }
-                //end suprre
+                //end suprre*/
 
                 long executeResult = ExecuteCommand(ref outputReport);
                 if (executeResult >= 0)
@@ -453,7 +453,7 @@ namespace UniSense
             }
             if (newState.MicLed.HasValue && (!sendOnlyChangedValues || !newState.MicLed.Value.Equals(currentState?.MicLed)))
             {
-                outputReport.SetMicLedState(newState.MicLed.Value);
+                outputReport.SetMicMuteLedMode(newState.MicLed.Value);
                 updatedValues = true;
             }
             if (newState.PlayerLed.HasValue && (!sendOnlyChangedValues || !newState.PlayerLed.Value.Equals(currentState?.PlayerLed)))

@@ -19,74 +19,64 @@ namespace UniSense.LowLevel
         internal const int kReportId = 2;
 
 
-        
-
-
-
-
-
-        [Flags]
-        internal enum LedFlags : byte
-        {
-            PlayerLedBrightness = 0x01,
-            LightBarFade        = 0x02,
-        }
-
-        internal enum InternalPlayerLedBrightness : byte
-        {
-            High = 0x0,
-            Medium = 0x1,
-            Low = 0x2,
-        }
-
         [FieldOffset(0)] public InputDeviceCommand baseCommand;
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 0)] public byte reportId;
 
         //Globals flags
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public byte outputReportContent1;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 2)] public Flags2 outputReportContent2;
-        internal enum RumbleContent : byte // 2 lower bits (0b_0000_00xx)
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public OutputReportContent outputReportContent;
+        [StructLayout(LayoutKind.Explicit, Size = 2)] internal struct OutputReportContent
         {
-            AudioHaptics = 0x00,            // Stops emulated rumbles and switch back instantly to audio haptics
-            FadeBackToAudioHaptics = 0x01,  // Allow rumble to gracefully terminate and then re-enable audio haptics
-            EmulatedRumbles = 0x02,         // Emulated rumbles are allowed to time out without re-enabling audio haptics
-            NewEmulatedRumbles = 0x03,      // Allow to set new values for lowFrequencyMotorSpeed and highFrequencyMotorSpeed
-        }
-        [Flags] internal enum Flags1 : byte // 6 higher bits (0b_xxx_xx00)
-        {
-            AllowRightTriggerFFB = 0x04,    // Enable setting RightTriggerFFB section
-            AllowLeftTriggerFFB = 0x08,     // Enable setting LeftTriggerFFB section
-            AllowExternalVolume = 0x10,     // Enable setting externalVolume
-            AllowInternalVolume = 0x20,     // Enable setting internalVolume
-            AllowMicVolume = 0x40,          // Enable setting micVolume
-            AllowAudioControl = 0x80        // Enable setting AudioControl section
-        }
-        [Flags] internal enum Flags2 : byte
-        {
-            AllowMicMuteLightMode = 0x01,   // Enable setting micMuteLedMode
-            AllowMuteControl = 0x02,        // Enable setting MuteControl section
-            AllowLightBarColor = 0x04,      // Enable setting LightBarColor section
-            //ResetLights = 0x08,             // Release the LEDs from Wireless firmware control see Wiki for more info
-            AllowPlayerLed = 0x10,          // Enable setting PlayerLedIndicators section
-            //Unknown = 0x20,                 // 
-            AllowPowerReduction = 0x40,     // Enable setting powerReduction
-            AllowAudioControl2 = 0x80       // Enable setting AudioControl2 section
+            [FieldOffset(0)] public UInt16 outputReportContent;
+            public enum RumbleContent : UInt16 // 2 lower bits (0b_0000_0000_0000_00xx)
+            {
+                AudioHaptics = 0x0000,            // Stops emulated rumbles and switch back instantly to audio haptics
+                FadeBackToAudioHaptics = 0x0001,  // Allow rumble to gracefully terminate and then re-enable audio haptics
+                EmulatedRumbles = 0x0002,         // Emulated rumbles are allowed to time out without re-enabling audio haptics
+                NewEmulatedRumbles = 0x0003,      // Allow to set new values for lowFrequencyMotorSpeed and highFrequencyMotorSpeed
+            }
+            [Flags] public enum ContentFlags : UInt16 // 8+6 higher bits (0b_xxxx_xxxx_xxxx_xx00)
+            {
+                AllowRightTriggerFFB = 0x0004,  // Enable setting RightTriggerFFB section
+                AllowLeftTriggerFFB = 0x0008,   // Enable setting LeftTriggerFFB section
+                AllowExternalVolume = 0x0010,   // Enable setting externalVolume
+                AllowInternalVolume = 0x0020,   // Enable setting internalVolume
+                AllowMicVolume = 0x0040,        // Enable setting micVolume
+                AllowAudioControl = 0x0080,     // Enable setting AudioControl section
+
+                AllowMicMuteLedMode = 0x0100,   // Enable setting micMuteLedMode
+                AllowMuteControl = 0x0200,      // Enable setting MuteControl section
+                AllowLightBarColor = 0x0400,    // Enable setting LightBarColor section
+                //ResetLights = 0x0800,           // Release the LEDs from Wireless firmware control see Wiki for more info
+                AllowPlayerLed = 0x1000,        // Enable setting PlayerLedIndicators section
+                //Unknown = 0x2000,               // 
+                AllowPowerReduction = 0x4000,   // Enable setting powerReduction
+                AllowAudioControl2 = 0x8000     // Enable setting AudioControl2 section
+            }
+
+            public RumbleContent rumbleContent
+            {
+                get { return (RumbleContent)(outputReportContent & 0b_0000_0000_0000_0011); }
+                set { outputReportContent = (UInt16)value; }
+            }
+            public ContentFlags contentFlags
+            {
+                get { return (ContentFlags)(outputReportContent & 0b_1111_1111_1111_1100); }
+                set { outputReportContent = (UInt16)value; }
+            }
         }
 
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte lowFrequencyMotorSpeed;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte highFrequencyMotorSpeed;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte lowFrequencyMotorSpeed; // 0-255, Emulated by the Right VoiceCoil
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte highFrequencyMotorSpeed; // 0-255, Emulated by the Left VoiceCoil
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 5)] public byte externalVolume; // volume of external device plugged in the controller jack
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 6)] public byte internalVolume; // volume of internal speaker of the controller
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40, 0x00 is not fully muted);
         
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioControl audioControl; // SpeakerCompPreGain also present at + 38 
-        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)]
-        internal struct AudioControl
+        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)] internal struct AudioControl
         {
             [FieldOffset(0)] public byte audioControl;
-
 
             public enum MicSelect : byte //2 lower bits (0b_000_00xx)
             {
@@ -117,23 +107,22 @@ namespace UniSense.LowLevel
             public MicSelect micSelect
             {
                 get { return (MicSelect)(audioControl & 0b_0000_0011); }
-                set { audioControl |= (byte)value; }
+                set { audioControl = (byte) value; }
             }
             public MicEffect micControl
             {
                 get { return (MicEffect)(audioControl & 0b_0000_1100); }
-                set { audioControl |= (byte)value; }
+                set { audioControl = (byte) value; }
             }
-
             public OutputPathSelect outputPathSelect
             { 
                 get { return (OutputPathSelect) (audioControl & 0b_0011_0000); }
-                set { audioControl |= (byte) value;}
+                set { audioControl = (byte) value;}
             }
             public InputPathSelect inputPathSelect
             {
                 get { return (InputPathSelect)(audioControl & 0b_1100_0000); }
-                set { audioControl |= (byte) value; }
+                set { audioControl = (byte) value; }
             }
         }
         
@@ -167,12 +156,28 @@ namespace UniSense.LowLevel
         
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 37)] public byte powerReduction; // (lower nibble: main motor; upper nibble trigger effects) 0x00 to 0x07 - reduce overall power of the respective motors/effects by 12.5% per increment (this does not affect the regular trigger motor settings, just the automatically repeating trigger effects)
 
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 38)] public byte SpeakerCompPreGain; // additional speaker volume boost
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 38)] public byte audioControl2; // 3 lower bits are SpeakerCompPreGain : additional speaker volume boost. The other bits actions are still unknown.
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 39)] public LedFlags ledFlags;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 42)] public byte ledPulseOption;
-
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 43)] public InternalPlayerLedBrightness playerLedBrightness;
+        [Flags] internal enum LedFlags : byte
+        {
+            PlayerLedBrightness = 0x01,
+            LightBarFade = 0x02,
+        }
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 42)] public LedFadeAnimation ledFadeAnimation;
+        internal enum LedFadeAnimation : byte
+        {
+            None = 0x00,
+            FadeIn = 0x01, // from black to blue
+            FadeOut = 0x02 // from blue to black 
+        }
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 43)] public PlayerLedBrightness playerLedBrightness; 
+        internal enum PlayerLedBrightness : byte
+        {
+            High = 0x0,
+            Medium = 0x1,
+            Low = 0x2,
+        }
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 44)] public byte playerLedState;
 
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 45)] public byte lightBarRed;
@@ -183,7 +188,7 @@ namespace UniSense.LowLevel
 
         public void SetMotorSpeeds(float lowFreq, float highFreq)
         {
-            flags1 |= Flags1.EnableRumbleEmulation | Flags1.UseRumbleNotHaptics;
+            outputReportContent.rumbleContent = OutputReportContent.RumbleContent.NewEmulatedRumbles;
             lowFrequencyMotorSpeed = (byte)Mathf.Clamp(lowFreq * 255, 0, 255);
             highFrequencyMotorSpeed = (byte)Mathf.Clamp(highFreq * 255, 0, 255);
         }
@@ -192,17 +197,17 @@ namespace UniSense.LowLevel
         {
             if (resetImmediately)
             {
-                flags1 &= ~(Flags1.EnableRumbleEmulation | Flags1.UseRumbleNotHaptics);
+                outputReportContent.rumbleContent = OutputReportContent.RumbleContent.AudioHaptics;
             }
             else
             {
-                flags1 &= ~Flags1.UseRumbleNotHaptics;
+                outputReportContent.rumbleContent = OutputReportContent.RumbleContent.FadeBackToAudioHaptics;
             }
         }
 
-        public void SetMicLedState(DualSenseMicLedState state)
+        public void SetMicMuteLedMode(DualSenseMicLedState state)
         {
-            outputReportContent2 |= Flags2.AllowMicMuteLightMode;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowMicMuteLedMode;
             switch (state)
             {
                 case DualSenseMicLedState.Off:
@@ -220,7 +225,7 @@ namespace UniSense.LowLevel
         }
         public void SetLeftTriggerState(DualSenseTriggerState state)
         {
-            flags1 |= Flags1.AllowLeftTriggerFFB;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowLeftTriggerFFB;
             fixed (byte* p = leftTriggerParams)
             {
                 SetTriggerState(state, ref leftTriggerMode, p);
@@ -229,7 +234,7 @@ namespace UniSense.LowLevel
 
         public void SetRightTriggerState(DualSenseTriggerState state)
         {
-            flags1 |= Flags1.AllowRightTriggerFFB;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowRightTriggerFFB;
             fixed (byte* p = rightTriggerParams)
             {
                 SetTriggerState(state, ref rightTriggerMode, p);
@@ -289,28 +294,28 @@ namespace UniSense.LowLevel
 
         public void SetLightBarColor(Color color)
         {
-            outputReportContent2 |= Flags2.AllowLightBarColor;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowLightBarColor;
             ledFlags |= LedFlags.LightBarFade;
-            ledPulseOption = 0x02;
+            ledFadeAnimation = LedFadeAnimation.FadeOut;
             lightBarRed = (byte) Mathf.Clamp(color.r * 255, 0, 255);
             lightBarGreen = (byte) Mathf.Clamp(color.g * 255, 0, 255);
             lightBarBlue = (byte) Mathf.Clamp(color.b * 255, 0, 255);
         }
 
-        public void SetPlayerLedBrightness(PlayerLedBrightness brightness)
+        public void SetPlayerLedBrightness(UniSense.PlayerLedBrightness brightness)
         {
             ledFlags |= LedFlags.PlayerLedBrightness;
-            ledPulseOption = 0x02;
+            ledFadeAnimation = LedFadeAnimation.FadeOut;
             switch (brightness)
             {
-                case PlayerLedBrightness.High:
-                    playerLedBrightness = InternalPlayerLedBrightness.High;
+                case UniSense.PlayerLedBrightness.High:
+                    playerLedBrightness = PlayerLedBrightness.High;
                     break;
-                case PlayerLedBrightness.Medium:
-                    playerLedBrightness = InternalPlayerLedBrightness.Medium;
+                case UniSense.PlayerLedBrightness.Medium:
+                    playerLedBrightness = PlayerLedBrightness.Medium;
                     break;
-                case PlayerLedBrightness.Low:
-                    playerLedBrightness = InternalPlayerLedBrightness.Low;
+                case UniSense.PlayerLedBrightness.Low:
+                    playerLedBrightness = PlayerLedBrightness.Low;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(brightness), brightness, null);
@@ -319,15 +324,15 @@ namespace UniSense.LowLevel
 
         public void SetPlayerLedState(PlayerLedState state)
         {
-            outputReportContent2 |= Flags2.AllowPlayerLed;
-            ledPulseOption = 0x02;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowPlayerLed;
+            ledFadeAnimation = LedFadeAnimation.FadeOut;
             playerLedState = state.Value;
         }
 
         public void DisableLightBarAndPlayerLed()
         {
             ledFlags |= LedFlags.LightBarFade;
-            ledPulseOption = 0x01;
+            ledFadeAnimation = LedFadeAnimation.FadeIn;
         }
 
         /// <summary>
@@ -338,15 +343,15 @@ namespace UniSense.LowLevel
         /// <param name="volume"></param>
         public void SetInternalVolume(float volume)
         {
-            flags1 |= Flags1.AllowExternalVolume | Flags1.AllowInternalVolume;
-            audioFlags |= AudioFlags.enableInternalSpeaker;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowInternalVolume;
+            //AudioControl.audioFlags |= AudioFlags.enableInternalSpeaker;
             internalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
-            secondInternalVolume = (byte)Mathf.Clamp(volume * 0, 0, 7);
+            audioControl2 = (byte)Mathf.Clamp(volume * 0, 0, 7);
         }
 
         public void SetExternalDeviceVolume(float volume)
         {
-            flags1 |= Flags1.AllowExternalVolume;
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowExternalVolume;
             externalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
         }
 
