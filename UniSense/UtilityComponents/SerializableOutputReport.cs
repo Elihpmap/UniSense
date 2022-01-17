@@ -12,7 +12,7 @@ namespace UniSense.LowLevel
     // https://gist.github.com/stealth-alex/10a8e7cc6027b78fa18a7f48a0d3d1e4
 
     [StructLayout(LayoutKind.Explicit, Size = kSize)]
-    internal unsafe struct DualSenseHIDOutputReport : IInputDeviceCommandInfo
+    internal unsafe struct SerializableOutputReport : IInputDeviceCommandInfo
     {
         public static FourCC Type => new FourCC('H', 'I', 'D', 'O');
         public FourCC typeStatic => Type;
@@ -22,13 +22,19 @@ namespace UniSense.LowLevel
         internal const int kReportId = 2;
 
         [FieldOffset(0)] public InputDeviceCommand baseCommand;
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 0)] public byte reportId;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public OutputReportContent outputReportContent;
-                                                        //2 is the end of outputReportContent (because OutputReportContent is Uint16 so 2 byte long)
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte RumbleEmulationLowRight; // 0-255, Emulated Low frequency rumbles by the Right VoiceCoil
+        //2 is the end of outputReportContent (because OutputReportContent is Uint16 so 2 byte long)
+        [ByteDisplay]
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte RumbleEmulationLowRight; // 0-255, Emulated Low frequency rumbles by the Right 
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte RumbleEmulationHighLeft; // 0-255, Emulated High frequency rumbles by the Left VoiceCoil
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 5)] public byte externalVolume; // volume of external device plugged in the controller jack (max 0x7f = 127)
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 6)] public byte internalVolume; // volume of internal speaker of the controller (PS5 appears to only use the range 0x3d-0x64 = 61-100)
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40 = 64, 0x00 is not fully muted);
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioControl audioControl; // SpeakerCompPreGain also present at [FieldOffset(K + 38)]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 9)] public MicMuteLedMode micMuteLedMode;
@@ -41,20 +47,27 @@ namespace UniSense.LowLevel
                                                         //34 2nd byte of 4 of data mirrored back in the InputReport
                                                         //35 3rd byte of 4 of data mirrored back in the InputReport
                                                         //36 4th byte of 4 of data mirrored back in the InputReport
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 37)] public byte powerReduction; // (lower nibble: main motor; upper nibble trigger effects) 0x00 to 0x07 - reduce overall power of the respective motors/effects by 12.5% per increment (this does not affect the regular trigger motor settings, just the automatically repeating trigger effects)
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 38)] public byte audioControl2; // 3 lower bits are SpeakerCompPreGain : additional speaker volume boost. The other bits actions are still unknown.
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 39)] public LedFlags ledFlags; // only defined on the two lower bits the rest is unused
                                                         //40 Unknown
                                                         //41 Unknown
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 42)] public LedFadeAnimation ledFadeAnimation;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 43)] public PlayerLedBrightness playerLedBrightness;
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 44)] public byte playerLedState;
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 45)] public byte lightBarRed;
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 46)] public byte lightBarGreen;
+        [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 47)] public byte lightBarBlue;
 
         #region Flags and structs for data formats
-        [StructLayout(LayoutKind.Explicit, Size = 2)] internal struct OutputReportContent
+        [StructLayout(LayoutKind.Explicit, Size = 2)]
+        internal struct OutputReportContent
         {
             [FieldOffset(0)] public UInt16 outputReportContent;
             public enum RumbleContent : UInt16 // 2 lower bits (0b_0000_0000_0000_00xx)
@@ -64,7 +77,8 @@ namespace UniSense.LowLevel
                 EmulatedRumbles = 0x0002,         // Emulated rumbles are allowed to time out without re-enabling audio haptics
                 NewEmulatedRumbles = 0x0003,      // Allow to set new values for lowFrequencyMotorSpeed and highFrequencyMotorSpeed
             }
-            [Flags] public enum ContentFlags : UInt16 // 8+6 higher bits (0b_xxxx_xxxx_xxxx_xx00)
+            [Flags]
+            public enum ContentFlags : UInt16 // 8+6 higher bits (0b_xxxx_xxxx_xxxx_xx00)
             {
                 AllowRightTriggerFFB = 0x0004,  // Enable setting RightTriggerFFB section
                 AllowLeftTriggerFFB = 0x0008,   // Enable setting LeftTriggerFFB section
@@ -94,7 +108,8 @@ namespace UniSense.LowLevel
                 set { outputReportContent = (UInt16)((outputReportContent & 0b_0000_0000_0000_0011) | (UInt16)value); }
             }
         }
-        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)] internal struct AudioControl
+        [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)]
+        internal struct AudioControl
         {
             [FieldOffset(0)] public byte audioControl;
 
@@ -104,7 +119,8 @@ namespace UniSense.LowLevel
                 InternalMic = 0x01,     // force use of internal controller mic (if neither 0x01 and 0x02 are set, an attached headset will take precedence)
                 ExternalMic = 0x02,     // force use of mic attached to the controller (headset) (if neither 0x01 and 0x02 are set, an attached headset will take precedence
             }
-            [Flags] public enum MicEffect : byte // 2 higher bits of the lower nible (0b_0000_xx00)
+            [Flags]
+            public enum MicEffect : byte // 2 higher bits of the lower nible (0b_0000_xx00)
             {
                 EchoCancelEnable = 0x04,
                 NoiseCancelEnable = 0x08,
@@ -135,8 +151,8 @@ namespace UniSense.LowLevel
                 set { audioControl = (byte)((audioControl & 0b_1111_0011) | (byte)value); }
             }
             public OutputPathSelect outputPathSelect
-            { 
-                get { return (OutputPathSelect) (audioControl & 0b_0011_0000); }
+            {
+                get { return (OutputPathSelect)(audioControl & 0b_0011_0000); }
                 set { audioControl = (byte)((audioControl & 0b_1100_1111) | (byte)value); }
             }
             public InputPathSelect inputPathSelect
@@ -151,7 +167,8 @@ namespace UniSense.LowLevel
             On = 0x01,
             Breathing = 0x02,
         }
-        [Flags] internal enum MuteControl : byte
+        [Flags]
+        internal enum MuteControl : byte
         {
             TouchPowerSave = 0x01,
             MotionPowerSave = 0x02,
@@ -162,7 +179,8 @@ namespace UniSense.LowLevel
             HeadphoneMute = 0X40,
             TriggersMute = 0x80
         }
-        [Flags] internal enum LedFlags : byte
+        [Flags]
+        internal enum LedFlags : byte
         {
             PlayerLedBrightness = 0x01,
             LightBarFade = 0x02,
@@ -282,9 +300,9 @@ namespace UniSense.LowLevel
             outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowLightBarColor;
             ledFlags |= LedFlags.LightBarFade;
             ledFadeAnimation = LedFadeAnimation.FadeOut;
-            lightBarRed = (byte) Mathf.Clamp(color.r * 255, 0, 255);
-            lightBarGreen = (byte) Mathf.Clamp(color.g * 255, 0, 255);
-            lightBarBlue = (byte) Mathf.Clamp(color.b * 255, 0, 255);
+            lightBarRed = (byte)Mathf.Clamp(color.r * 255, 0, 255);
+            lightBarGreen = (byte)Mathf.Clamp(color.g * 255, 0, 255);
+            lightBarBlue = (byte)Mathf.Clamp(color.b * 255, 0, 255);
         }
 
         public void SetPlayerLedBrightness(UniSense.PlayerLedBrightness brightness)

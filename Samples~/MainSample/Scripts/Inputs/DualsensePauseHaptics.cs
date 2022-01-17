@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class DualsensePauseHaptics : AbstractDualSenseBehaviour
+public class DualSensePauseHaptics : AbstractDualSenseBehaviour
 {
     public void PauseHaptics()
     {
