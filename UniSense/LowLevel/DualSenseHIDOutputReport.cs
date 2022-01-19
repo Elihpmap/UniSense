@@ -22,16 +22,16 @@ namespace UniSense.LowLevel
         internal const int kReportId = 2;
 
         [FieldOffset(0)] public InputDeviceCommand baseCommand;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 0)] public byte reportId;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public OutputReportContent outputReportContent;
-                                                        //2 is the end of outputReportContent (because OutputReportContent is Uint16 so 2 byte long)
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte RumbleEmulationLowRight; // 0-255, Emulated Low frequency rumbles by the Right VoiceCoil
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 4)] public byte RumbleEmulationHighLeft; // 0-255, Emulated High frequency rumbles by the Left VoiceCoil
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 5)] public byte externalVolume; // volume of external device plugged in the controller jack (max 0x7f = 127)
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 6)] public byte internalVolume; // volume of internal speaker of the controller (PS5 appears to only use the range 0x3d-0x64 = 61-100)
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 7)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40 = 64, 0x00 is not fully muted);
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 8)] public AudioControl audioControl; // SpeakerCompPreGain also present at [FieldOffset(K + 38)]
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 9)] public MicMuteLedMode micMuteLedMode;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 00)] public byte reportId;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 01)] public OutputReportContent outputReportContent;
+                                                        //02 is the end of outputReportContent (because OutputReportContent is Uint16 so 2 byte long)
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 03)] public byte rumbleEmulationLowRight; // 0-255, Emulated Low frequency rumbles by the Right VoiceCoil
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 04)] public byte rumbleEmulationHighLeft; // 0-255, Emulated High frequency rumbles by the Left VoiceCoil
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 05)] public byte externalVolume; // volume of external device plugged in the controller jack (max 0x7f = 127)
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 06)] public byte internalVolume; // volume of internal speaker of the controller (PS5 appears to only use the range 0x3d-0x64 = 61-100)
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 07)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40 = 64, 0x00 is not fully muted);
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 08)] public AudioControl audioControl; // SpeakerCompPreGain also present at [FieldOffset(K + 38)]
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 09)] public MicMuteLedMode micMuteLedMode;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 10)] public MuteControl muteControl;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 11)] public byte rightTriggerMode;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 12)] public fixed byte rightTriggerParams[kTriggerParamSize];
@@ -100,9 +100,9 @@ namespace UniSense.LowLevel
 
             public enum MicSelect : byte //2 lower bits (0b_000_00xx)
             {
-                Auto = 0x00,
-                InternalMic = 0x01,     // force use of internal controller mic (if neither 0x01 and 0x02 are set, an attached headset will take precedence)
-                ExternalMic = 0x02,     // force use of mic attached to the controller (headset) (if neither 0x01 and 0x02 are set, an attached headset will take precedence
+                Auto = 0x00,            // an attached headset will take precedence, otherwise the internal one is used
+                InternalMic = 0x01,     // force use of internal controller mic
+                ExternalMic = 0x02,     // force use of mic attached to the controller (headset) 
             }
             [Flags] public enum MicEffect : byte // 2 higher bits of the lower nible (0b_0000_xx00)
             {
@@ -129,7 +129,7 @@ namespace UniSense.LowLevel
                 get { return (MicSelect)(audioControl & 0b_0000_0011); }
                 set { audioControl = (byte)((audioControl & 0b_1111_1100) | (byte)value); }
             }
-            public MicEffect micControl
+            public MicEffect micEffect
             {
                 get { return (MicEffect)(audioControl & 0b_0000_1100); }
                 set { audioControl = (byte)((audioControl & 0b_1111_0011) | (byte)value); }
@@ -170,8 +170,8 @@ namespace UniSense.LowLevel
         internal enum LedFadeAnimation : byte
         {
             None = 0x00,
-            FadeIn = 0x01, // from black to blue
-            FadeOut = 0x02 // from blue to black 
+            FadeIn = 0x01,
+            FadeOut = 0x02
         }
         internal enum PlayerLedBrightness : byte
         {
@@ -198,8 +198,8 @@ namespace UniSense.LowLevel
         public void SetMotorSpeeds(float lowFreq, float highFreq)
         {
             outputReportContent.rumbleContent = OutputReportContent.RumbleContent.NewEmulatedRumbles;
-            RumbleEmulationLowRight = (byte)Mathf.Clamp(lowFreq * 255, 0, 255);
-            RumbleEmulationHighLeft = (byte)Mathf.Clamp(highFreq * 255, 0, 255);
+            rumbleEmulationLowRight = (byte)Mathf.Clamp(lowFreq * 255, 0, 255);
+            rumbleEmulationHighLeft = (byte)Mathf.Clamp(highFreq * 255, 0, 255);
         }
 
         public void ResetMotorSpeeds(bool resetImmediately = false)
@@ -235,7 +235,6 @@ namespace UniSense.LowLevel
 
         private void SetTriggerState(DualSenseTriggerState state, ref byte triggerMode, byte* triggerParams)
         {
-
             triggerMode = (byte)state.EffectType;
             ClearTriggerParams(triggerParams);
 
@@ -322,23 +321,36 @@ namespace UniSense.LowLevel
         #endregion
 
         #region Audio Control
-        /// <summary>
-        /// not working yet, I couldn't figure out which flags and value would work to enable this,
-        /// the only thing that work for now is that it stop audio to external device when set 
-        /// (until SetExternalDeviceVolume is called again)
-        /// </summary>
-        /// <param name="volume"></param>
         public void SetInternalVolume(float volume)
         {
-            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowInternalVolume;
-            //AudioControl.audioFlags |= AudioFlags.enableInternalSpeaker;
+            // TODO some of these are probably not needed each time, a cleanup might be good;
+
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowInternalVolume
+                                            | OutputReportContent.ContentFlags.AllowAudioControl
+                                            | OutputReportContent.ContentFlags.AllowAudioControl2;
+
             internalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
-            audioControl2 = (byte)Mathf.Clamp(volume * 0, 0, 7);
+
+            audioControl.micSelect = AudioControl.MicSelect.Auto;
+            audioControl.micEffect = AudioControl.MicEffect.EchoCancelEnable | AudioControl.MicEffect.NoiseCancelEnable;
+            audioControl.outputPathSelect = AudioControl.OutputPathSelect.X_X_R;
+            audioControl.inputPathSelect = AudioControl.InputPathSelect.CHAT_ASR;
+
+            audioControl2 = 0x05;
         }
 
         public void SetExternalDeviceVolume(float volume)
         {
-            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowExternalVolume;
+            // TODO some of these are probably not needed each time, being able to set them separatly might be good;
+
+            outputReportContent.contentFlags |= OutputReportContent.ContentFlags.AllowExternalVolume
+                                            | OutputReportContent.ContentFlags.AllowAudioControl;
+
+            audioControl.micSelect = AudioControl.MicSelect.Auto;
+            audioControl.micEffect = AudioControl.MicEffect.EchoCancelEnable | AudioControl.MicEffect.NoiseCancelEnable;
+            audioControl.outputPathSelect = AudioControl.OutputPathSelect.L_R_X;
+            audioControl.inputPathSelect = AudioControl.InputPathSelect.CHAT_ASR;
+
             externalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
         }
         #endregion

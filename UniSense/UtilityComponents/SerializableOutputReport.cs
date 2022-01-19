@@ -24,8 +24,10 @@ namespace UniSense.LowLevel
         [FieldOffset(0)] public InputDeviceCommand baseCommand;
         [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 0)] public byte reportId;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public OutputReportContent outputReportContent;
-        //2 is the end of outputReportContent (because OutputReportContent is Uint16 so 2 byte long)
+        [ByteDisplay]
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public byte outputReportContent1;
+        [ByteDisplay]
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 1)] public byte outputReportContent2;
         [ByteDisplay]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 3)] public byte RumbleEmulationLowRight; // 0-255, Emulated Low frequency rumbles by the Right 
         [ByteDisplay]
@@ -66,6 +68,7 @@ namespace UniSense.LowLevel
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 47)] public byte lightBarBlue;
 
         #region Flags and structs for data formats
+        [Serializable]
         [StructLayout(LayoutKind.Explicit, Size = 2)]
         internal struct OutputReportContent
         {
@@ -111,6 +114,7 @@ namespace UniSense.LowLevel
         [StructLayout(LayoutKind.Explicit, Pack = 0, Size = 1)]
         internal struct AudioControl
         {
+            [ByteDisplay]
             [FieldOffset(0)] public byte audioControl;
 
             public enum MicSelect : byte //2 lower bits (0b_000_00xx)
@@ -208,7 +212,7 @@ namespace UniSense.LowLevel
                 reportId = kReportId,
             };
         }
-
+        /*
         #region Data formation methods
 
         #region Haptics
@@ -274,7 +278,7 @@ namespace UniSense.LowLevel
         }
         #endregion
         #endregion
-
+        
         #region Lights and Leds
         public void SetMicMuteLedMode(DualSenseMicLedState state)
         {
@@ -362,5 +366,6 @@ namespace UniSense.LowLevel
         #endregion
 
         #endregion
+        */
     }
 }
