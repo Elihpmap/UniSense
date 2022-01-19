@@ -7,10 +7,12 @@ UniSense: DualSense plugin for Unity InputSystem
 This plugin enables Unity apps to use DualSense, the controller for PS5 in Windows.
 
 
-This project is incomplete state for now. For example:
+This project is incomplete state for now (currently in version 0.3.0):
 
-- the documentation including this README is work in progress.
-- The code is yet to be optimized.
+- The documentation including this README is work in progress.
+- Until the version 1.0.0 Backward compatibility is not guaranteed.
+
+More information is available in the CHANGELOG.md file;
 
 Any contribution is appreciated. Please do not hesitate to send PR if you have any proposal regarding this project.
 
@@ -32,6 +34,8 @@ You can install this package using Unity Package Manager (UPM).
 A main sample is available. There, you can see how to use the DualSense main features.
 
 On the UPM windows, select **Input System-UniSense** package, go to the Samples section and import the **DualSense Main Sample**.
+
+> Note : If update the package you may need to update or replace the sample with the newer one as backward compatibility is not yet guaranteed.
 
 ## Special thanks
 

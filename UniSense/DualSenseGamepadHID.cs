@@ -362,13 +362,6 @@ namespace UniSense
                 UpdateGamepad(false);
         }
 
-        [Obsolete("This method is deprecated, please use UpdateState or set NewState parameter directly followed by UpdateGamepad if needed")]
-        public void SetGamepadState(DualSenseGamepadState state)
-        {
-            NewState = state;
-            UpdateGamepad(false);
-        }
-
         /// <summary>
         /// Updates the gamepad outputs state accordingly to the actual value of the NewState property.
         /// </summary>
@@ -382,23 +375,6 @@ namespace UniSense
             if (//(stateModified || forceUpdate || UseLegacyHaptics) //this is a basic equivalent of the tests perfomed in CreateOutputReport() without the full creation thanks to lazy evaluation
                  CreateOutputReport(CurrentGamepadState, NewState, out outputReport, !forceUpdate))
             {
-                /*TODO suppre
-                if (dirtyscript.instance != null )
-                {
-                    dirtyscript.instance.prevFlag1 = (byte)outputReport.flags1;
-                    outputReport.flags1 = (DualSenseHIDOutputReport.Flags1)dirtyscript.instance.flag1;
-                    dirtyscript.instance.prevFlag2 = (byte)outputReport.outputReportContent2;
-                    outputReport.outputReportContent2 = (DualSenseHIDOutputReport.Flags2)dirtyscript.instance.flag2;
-
-                    outputReport.externalVolume = dirtyscript.instance.externalVolume;
-                    outputReport.internalVolume = dirtyscript.instance.internalVolume;
-                    outputReport.micVolume = dirtyscript.instance.internalMicVolume;
-                    outputReport.audioFlags = (DualSenseHIDOutputReport.AudioFlags)dirtyscript.instance.audioFlags;
-
-                    outputReport.secondInternalVolume = dirtyscript.instance.secondInternalVolume;
-                }
-                //end suprre*/
-
                 long executeResult = ExecuteCommand(ref outputReport);
                 if (executeResult >= 0)
                 {

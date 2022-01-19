@@ -10,17 +10,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Newer trigger force feedback effects (check compatibility depending on the controller updates?)
 - Search and implement Bluetooth version?
 - Mics parameters implementation
+- Update Sample examples with added functionnality (especially new triggerValues)
+- More documentation (some of it is already made as XML tags but there is still missing function and ideally a static version could be generated afterward)
+- Inspector version of DualSenseGamepadState and subStructures
 
 ### [Need to be] Fixed
-- Internal speaker volume setter (need to find the right flags)
 - multiEditing a DualSenseSerializableTriggerState property is impossible if any of their value differ (even if hidden) : probably comes from hasMultipleDifferentValues returns true
 
 ### [Need to be] Changed
 - Use of UseLegacyRumble bool to a RumbleType enum {LegacyOnly (always sending legacy values even when 0), HDAndPause (discard any motor value but still automaticaly send 0 values whan HapticPaused is true), HDOnly (always discard motor values)}
 - Restandardisation of some name (especially TriggerEffects)
+- Rethink the distribution of lowlevel / Accessible / inspectorDisplayable structure
 
 ### [Need to be reviewed for] Security
-- Some values can be changed outside of the plugin as it is mainly using shallow copies
+- Some values can be changed outside of the plugin as it is mainly using shallow copies (or are they? since most of them are struct it is probably good, no?)
+
+
+> For pre 1.0.0 version, version number values are shifted as such : UNUSED.MAJOR.MINOR, and backward compatibility is not guaranteed between Minor changes
+
+## [0.3.0] - 2022-01-19
+
+### Changed
+- Full rework of lowlevel HIDOutput presentation with the newer flags and parameters found
+- Removed deprecated function SetGamepadState() as backward compatibility is not needed before V1.0.0 
+
+### Fixed 
+- internal speaker sound volume is now working!
 
 
 ## [0.2.5] - 2022-01-12
@@ -87,7 +102,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.2.0] - 2021-11-19
 
 ### Added
-- Intelligent gamepad Update (limits the Updates to stricktly necessary ones). Still improvable (see "//TODO" comments...)
+- Intelligent gamepad Update (limits the Updates to stricktly necessary ones).
 - Decoupling of gamepadState update (inner memory value) and gamepad update (physical update of the controller according to the gamepadStatestate)
 - Possibility to deactivate legacy rumbles to use the HD one (with an external implementation).
 - Events called for reset, pause and resume haptics to link a possible HD rumble implementation.
