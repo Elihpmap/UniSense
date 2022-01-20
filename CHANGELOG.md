@@ -22,8 +22,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Restandardisation of some name (especially TriggerEffects)
 - Rethink the distribution of lowlevel / Accessible / inspectorDisplayable structure
 
-### [Need to be reviewed for] Security
-- Some values can be changed outside of the plugin as it is mainly using shallow copies (or are they? since most of them are struct it is probably good, no?)
 
 
 > For pre 1.0.0 version, version number values are shifted as such : UNUSED.MAJOR.MINOR, and backward compatibility is not guaranteed between Minor changes
@@ -32,6 +30,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Full rework of lowlevel HIDOutput presentation with the newer flags and parameters found
+- Restored default DualSenseMotorSpeed.Equals method beacause structs are value types and are checked correctly alreday (no need for data protection either since there is no reference type within the Unisense defined struct)
+
+### Removed 
 - Removed deprecated function SetGamepadState() as backward compatibility is not needed before V1.0.0 
 
 ### Fixed 

@@ -51,12 +51,12 @@ namespace UniSense
         private bool stateModified;
         public DualSenseGamepadState NewState
         {
-            get { return _newState; } // TODO Data out protection
+            get { return _newState; }
             set
             {
                 stateModified = true;
                 CheckLegacyRumbleValidity(ref value.Motor);
-                _newState = value; // TODO data in protection
+                _newState = value;
             }
         }
 
@@ -64,7 +64,7 @@ namespace UniSense
         private DualSenseGamepadState _currentGamepadState;
         public DualSenseGamepadState CurrentGamepadState
         {
-            get { return _currentGamepadState; } // TODO Data out protection
+            get { return _currentGamepadState; }
             private set
             {
                 _currentGamepadState = value;
@@ -170,7 +170,6 @@ namespace UniSense
         }
 
         #region QuickSets 
-        // TODO Need Data In protection
         #region Light Bar Color
         //----------------------------------------------------------------------------------------------------
         public override void SetLightBarColor(Color color) => SetLightBarColor(color, true);
@@ -184,7 +183,7 @@ namespace UniSense
         public void ResetLightBarColor(bool updateGamepad = true) => SetLightBarColor(Color.black, updateGamepad);
 
         //TODO add SetUserLight
-        //TODO add SetMicLIght
+        //TODO add SetMicLight
         #endregion
 
         #region Haptics Feedbacks
@@ -419,8 +418,7 @@ namespace UniSense
 
             bool updatedValues = false;
 
-            //Test for updated values between states and fill the outputReport if necessary 
-            //TODO updates struct declaration to test equals with underlying values (default behaviour is checking references)
+            //Test for updated values between states and fill the outputReport if necessary
             //Lights and leds
             if (newState.LightBarColor.HasValue && (!sendOnlyChangedValues || !newState.LightBarColor.Value.Equals(currentState?.LightBarColor)))
             {

@@ -39,21 +39,6 @@ namespace UniSense
             LowFrequencyMotorSpeed = lowFrequencyMotorSpeed;
             HighFrequencyMotorSpeed = highFrequenceyMotorSpeed;
         }
-
-        public override bool Equals(object obj)
-        {
-            return obj is DualSenseMotorSpeed speed &&
-                   LowFrequencyMotorSpeed == speed.LowFrequencyMotorSpeed &&
-                   HighFrequencyMotorSpeed == speed.HighFrequencyMotorSpeed;
-        }
-
-        public override int GetHashCode()
-        {
-            int hashCode = -344924298;
-            hashCode = hashCode * -1521134295 + LowFrequencyMotorSpeed.GetHashCode();
-            hashCode = hashCode * -1521134295 + HighFrequencyMotorSpeed.GetHashCode();
-            return hashCode;
-        }
     }
 
     public enum DualSenseTargetAudioDevice
