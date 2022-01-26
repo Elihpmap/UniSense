@@ -32,7 +32,7 @@ namespace UniSense.LowLevel
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 07)] public byte micVolume; // (internal mic only?) microphone volume (not linear, maxes out at 0x40 = 64, 0x00 is not fully muted);
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 08)] public AudioControl audioControl; // SpeakerCompPreGain also present at [FieldOffset(K + 38)]
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 09)] public MicMuteLedMode micMuteLedMode;
-        [FieldOffset(InputDeviceCommand.BaseCommandSize + 10)] public MuteControl muteControl;
+        [FieldOffset(InputDeviceCommand.BaseCommandSize + 10)] public MuteControlFlags muteControl;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 11)] public byte rightTriggerMode;
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 12)] public fixed byte rightTriggerParams[kTriggerParamSize];
         [FieldOffset(InputDeviceCommand.BaseCommandSize + 22)] public byte leftTriggerMode;
@@ -104,7 +104,7 @@ namespace UniSense.LowLevel
                 InternalMic = 0x01,     // force use of internal controller mic
                 ExternalMic = 0x02,     // force use of mic attached to the controller (headset) 
             }
-            [Flags] public enum MicEffect : byte // 2 higher bits of the lower nible (0b_0000_xx00)
+            [Flags] public enum MicEffectFlags : byte // 2 higher bits of the lower nible (0b_0000_xx00)
             {
                 EchoCancelEnable = 0x04,
                 NoiseCancelEnable = 0x08,
@@ -129,9 +129,9 @@ namespace UniSense.LowLevel
                 get { return (MicSelect)(audioControl & 0b_0000_0011); }
                 set { audioControl = (byte)((audioControl & 0b_1111_1100) | (byte)value); }
             }
-            public MicEffect micEffect
+            public MicEffectFlags micEffectFlags
             {
-                get { return (MicEffect)(audioControl & 0b_0000_1100); }
+                get { return (MicEffectFlags)(audioControl & 0b_0000_1100); }
                 set { audioControl = (byte)((audioControl & 0b_1111_0011) | (byte)value); }
             }
             public OutputPathSelect outputPathSelect
@@ -151,7 +151,7 @@ namespace UniSense.LowLevel
             On = 0x01,
             Breathing = 0x02,
         }
-        [Flags] internal enum MuteControl : byte
+        [Flags] internal enum MuteControlFlags : byte
         {
             TouchPowerSave = 0x01,
             MotionPowerSave = 0x02,
@@ -332,7 +332,7 @@ namespace UniSense.LowLevel
             internalVolume = (byte)Mathf.Clamp(volume * 255, 0, 255);
 
             audioControl.micSelect = AudioControl.MicSelect.Auto;
-            audioControl.micEffect = AudioControl.MicEffect.EchoCancelEnable | AudioControl.MicEffect.NoiseCancelEnable;
+            audioControl.micEffectFlags = AudioControl.MicEffectFlags.EchoCancelEnable | AudioControl.MicEffectFlags.NoiseCancelEnable;
             audioControl.outputPathSelect = AudioControl.OutputPathSelect.X_X_R;
             audioControl.inputPathSelect = AudioControl.InputPathSelect.CHAT_ASR;
 
@@ -347,7 +347,7 @@ namespace UniSense.LowLevel
                                             | OutputReportContent.ContentFlags.AllowAudioControl;
 
             audioControl.micSelect = AudioControl.MicSelect.Auto;
-            audioControl.micEffect = AudioControl.MicEffect.EchoCancelEnable | AudioControl.MicEffect.NoiseCancelEnable;
+            audioControl.micEffectFlags = AudioControl.MicEffectFlags.EchoCancelEnable | AudioControl.MicEffectFlags.NoiseCancelEnable;
             audioControl.outputPathSelect = AudioControl.OutputPathSelect.L_R_X;
             audioControl.inputPathSelect = AudioControl.InputPathSelect.CHAT_ASR;
 

@@ -3,6 +3,9 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
+
+/// Serializables version of a few unserializable struct defined in DualSenseDefine.cs
+/// And some custom inspector and property drawer Attributes to display them correctly
 namespace UniSense
 {
     // Having an explicit layout with different interpretation of the same data is incompatible with unity inspector
@@ -157,9 +160,18 @@ namespace UniSense
 
     #region Custom additionnal display attributes
 
+    /// <summary>
+    /// An attribute to display a <see cref="byte"/> type value as 8 boolean bits in the inspector.
+    /// Custom property drawer is <see cref="ByteDisplayPropertyDrawer"/>
+    /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public class ByteDisplay : PropertyAttribute { }
 
+    /// <summary>
+    /// An attribute to make a more customisable discrete range slider 
+    /// (with the possibility to reference properties as min or max for example).
+    /// Custom property drawer is <see cref="DynamicDiscreteRangePropertyDrawer"/>
+    /// </summary>
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false, Inherited = true)]
     public class DynamicDiscreteRange : PropertyAttribute
     {

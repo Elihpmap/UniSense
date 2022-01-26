@@ -20,13 +20,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### [Need to be] Changed
 - Use of UseLegacyRumble bool to a RumbleType enum {LegacyOnly (always sending legacy values even when 0), HDAndPause (discard any motor value but still automaticaly send 0 values whan HapticPaused is true), HDOnly (always discard motor values)}
 - Restandardisation of some name (especially TriggerEffects)
-- Rethink the distribution of lowlevel / Accessible / inspectorDisplayable structure
+- Rethink and change the distribution of lowlevel / Accessible / inspectorDisplayable structure
+- rework led settings 
 
 
 
 > For pre 1.0.0 version, version number values are shifted as such : UNUSED.MAJOR.MINOR, and backward compatibility is not guaranteed between Minor changes
 
 ## [0.3.0] - 2022-01-19
+
+### Added
+- A simple Utility Component to easily setup the lightbar Color
 
 ### Changed
 - Full rework of lowlevel HIDOutput presentation with the newer flags and parameters found

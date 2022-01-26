@@ -1,27 +1,13 @@
-using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine;
 
 namespace UniSense
 {
-    /// <summary>
-    /// A simple component to setup and update triggerStates from the unity editor
-    /// </summary>
-    public class TriggerStateSetter : MonoBehaviour
+    public class LedsColorSetter : MonoBehaviour
     {
-        public enum TriggerType
-        {
-            Left,
-            Right,
-            Both
-        }
-
-        public TriggerType triggerToSet;
-        public DualSenseSerializableTriggerState triggerState;
-
-        void Start()
-        {
-
-        }
+        public Color lightBarColor;
 
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {
@@ -35,45 +21,29 @@ namespace UniSense
             }
             else
             {
-                switch (triggerToSet)
-                {
-                    case TriggerType.Left:
-                        dualSenseGamepad.SetTriggerState(triggerState, null, true);
-                        break;
-
-                    case TriggerType.Right:
-                        dualSenseGamepad.SetTriggerState(null, triggerState, true);
-                        break;
-
-                    case TriggerType.Both:
-                        dualSenseGamepad.SetTriggerState(triggerState, triggerState, true);
-                        break;
-                }
+                dualSenseGamepad.SetLightBarColor(lightBarColor);
             }
         }
     }
 
 #if UNITY_EDITOR
-    [CustomEditor(typeof(TriggerStateSetter))]
+    [CustomEditor(typeof(LedsColorSetter))]
     [CanEditMultipleObjects]
-    public class TriggerStateSetterEditor : Editor
+    public class LedsColorSetterEditor : Editor
     {
-        SerializedProperty triggerToSetProperty;
-        SerializedProperty triggerStateProperty;
+        SerializedProperty lightBarColorProperty;
         bool autoUpdate = false;
 
         private void OnEnable()
         {
-            triggerToSetProperty = serializedObject.FindProperty("triggerToSet");
-            triggerStateProperty = serializedObject.FindProperty("triggerState");
+            lightBarColorProperty = serializedObject.FindProperty("lightBarColor");
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(triggerToSetProperty);
-            EditorGUILayout.PropertyField(triggerStateProperty);
+            EditorGUILayout.PropertyField(lightBarColorProperty);
 
 
             EditorGUILayout.Space();
@@ -88,20 +58,20 @@ namespace UniSense
                 else
                     EditorGUILayout.LabelField(new GUIContent("Auto Update",
                         "Automaticaly update the gamepad each time the component values are modified." +
-                        "\nThis is for test purposes and not available while in Play mode."), 
+                        "\nThis is for test purposes and not available while in Play mode."),
                         new GUIContent("Cannot use AutoUpdate while editing multiple object"));
             }
 
             if (autoUpdate && !Application.isPlaying && serializedObject.hasModifiedProperties)
             {
-                (serializedObject.targetObject as TriggerStateSetter).Set(DualSenseGamepadHID.FindFirst());
+                (serializedObject.targetObject as LedsColorSetter).Set(DualSenseGamepadHID.FindFirst());
             }
 
             //Button
-            if (GUILayout.Button(new GUIContent("Call Set(First_Dualsense)", 
+            if (GUILayout.Button(new GUIContent("Call Set(First_Dualsense)",
                 "Sets the DualSenseGamepadHID.FindFirst() TriggerStates as specified by this component")))
             {
-                foreach (TriggerStateSetter setter in targets)
+                foreach (LedsColorSetter setter in targets)
                 {
                     setter.Set(DualSenseGamepadHID.FindFirst());
                 }
