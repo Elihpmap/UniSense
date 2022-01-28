@@ -15,7 +15,7 @@ namespace UniSense
             Both
         }
 
-        public TriggerType triggerToSet;
+        public TriggerType triggerToSet = TriggerType.Both;
         public DualSenseSerializableTriggerState triggerState;
 
         void Start()
@@ -51,6 +51,9 @@ namespace UniSense
                 }
             }
         }
+
+        public void SetFirst() => Set(DualSenseGamepadHID.FindFirst());
+        public void SetCurrent() => Set();
     }
 
 #if UNITY_EDITOR
@@ -103,7 +106,7 @@ namespace UniSense
             {
                 foreach (TriggerStateSetter setter in targets)
                 {
-                    setter.Set(DualSenseGamepadHID.FindFirst());
+                    setter.SetFirst();
                 }
             }
 

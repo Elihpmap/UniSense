@@ -70,7 +70,7 @@ namespace UniSense
             if ((DualSenseTriggerEffectType)effectType.intValue == DualSenseTriggerEffectType.NoResistance
                 || (DualSenseTriggerEffectType)effectType.intValue == DualSenseTriggerEffectType.ResetResistance)
             {
-                effectType = null; 
+                effectParameters = null; 
             }
             else
             {
