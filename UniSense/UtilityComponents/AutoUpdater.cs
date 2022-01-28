@@ -49,7 +49,8 @@ public class DualSenseAutoUpdater : MonoBehaviour
             {
                 DualSense = DualSenseGamepadHID.FindFirst();
             }
-            else 
+
+            if (DualSense != null)
             {
                 if (DualSense.TimeSinceLastGamepadUpdate >= autoUpdateTime &&
                         (DualSense.UseLegacyHaptics || !DualSense.UpdateSucceeded))
