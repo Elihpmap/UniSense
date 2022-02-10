@@ -13,6 +13,9 @@ namespace UniSense
         //public float pluggedInDeviceVolume;
         public bool updateOnSet = true;
 
+        public void ChangeValue(float integratedSpeakerVolume)
+            => this.integratedSpeakerVolume = integratedSpeakerVolume;
+
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {
             if (dualSenseGamepad is null)

@@ -10,6 +10,9 @@ namespace UniSense
         public Color lightBarColor;
         public bool updateOnSet = true;
 
+        public void ChangeValue(Color lightBarColor)
+            => this.lightBarColor = lightBarColor;
+
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {
             if (dualSenseGamepad is null)
