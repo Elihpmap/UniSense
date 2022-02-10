@@ -12,6 +12,8 @@ namespace UniSense
 
         public void ChangeValue(Color lightBarColor)
             => this.lightBarColor = lightBarColor;
+        public void SetOnFirst(bool update = true)
+            => Set(DualSenseGamepadHID.FindFirst());
 
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {

@@ -15,6 +15,8 @@ namespace UniSense
 
         public void ChangeValue(float integratedSpeakerVolume)
             => this.integratedSpeakerVolume = integratedSpeakerVolume;
+        public void SetOnFirst(bool update = true)
+            => Set(DualSenseGamepadHID.FindFirst());
 
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {
