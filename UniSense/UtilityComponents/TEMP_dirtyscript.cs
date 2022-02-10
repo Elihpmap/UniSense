@@ -4,9 +4,9 @@ using UniSense;
 using UniSense.LowLevel;
 using UnityEngine;
 
-public class dirtyscript : MonoBehaviour
+public class TEMP_dirtyscript : MonoBehaviour
 {
-    public static dirtyscript instance = null;
+    public static TEMP_dirtyscript instance = null;
 
     private void Start()
     {

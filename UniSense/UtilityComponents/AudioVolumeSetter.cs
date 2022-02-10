@@ -9,8 +9,9 @@ namespace UniSense
     {
         [Range(0, 1)]
         public float integratedSpeakerVolume;
-        [Range(0, 1)]
-        public float pluggedInDeviceVolume;
+        //[Range(0, 1)]
+        //public float pluggedInDeviceVolume;
+        public bool updateOnSet = true;
 
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {
@@ -24,7 +25,7 @@ namespace UniSense
             }
             else
             {
-                dualSenseGamepad.SetAudioVolume(integratedSpeakerVolume);
+                dualSenseGamepad.SetAudioVolume(integratedSpeakerVolume, DualSenseTargetAudioDevice.InternalSpeaker, updateOnSet);
             }
         }
     }
@@ -35,24 +36,13 @@ namespace UniSense
     [CanEditMultipleObjects]
     public class AudioVolumeSetterEditor : Editor
     {
-        SerializedProperty integratedSpeakerVolumeProperty;
-        SerializedProperty pluggedInDeviceVolumeProperty;
-
         bool autoUpdate = false;
-
-        private void OnEnable()
-        {
-            integratedSpeakerVolumeProperty = serializedObject.FindProperty("integratedSpeakerVolume");
-            pluggedInDeviceVolumeProperty = serializedObject.FindProperty("pluggedInDeviceVolume");
-        }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(integratedSpeakerVolumeProperty);
-            EditorGUILayout.PropertyField(pluggedInDeviceVolumeProperty);
-
+            base.DrawDefaultInspector();
 
             EditorGUILayout.Space();
 

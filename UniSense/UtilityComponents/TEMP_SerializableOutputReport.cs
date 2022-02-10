@@ -12,7 +12,7 @@ namespace UniSense.LowLevel
     // https://gist.github.com/stealth-alex/10a8e7cc6027b78fa18a7f48a0d3d1e4
 
     [StructLayout(LayoutKind.Explicit, Size = kSize)]
-    internal unsafe struct SerializableOutputReport : IInputDeviceCommandInfo
+    internal unsafe struct TEMP_SerializableOutputReport : IInputDeviceCommandInfo
     {
         public static FourCC Type => new FourCC('H', 'I', 'D', 'O');
         public FourCC typeStatic => Type;

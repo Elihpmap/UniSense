@@ -17,6 +17,7 @@ namespace UniSense
 
         public TriggerType triggerToSet = TriggerType.Both;
         public DualSenseSerializableTriggerState triggerState;
+        public bool updateOnSet = true;
 
         void Start()
         {
@@ -38,15 +39,15 @@ namespace UniSense
                 switch (triggerToSet)
                 {
                     case TriggerType.Left:
-                        dualSenseGamepad.SetTriggerState(triggerState, null, true);
+                        dualSenseGamepad.SetTriggerState(triggerState, null, updateOnSet);
                         break;
 
                     case TriggerType.Right:
-                        dualSenseGamepad.SetTriggerState(null, triggerState, true);
+                        dualSenseGamepad.SetTriggerState(null, triggerState, updateOnSet);
                         break;
 
                     case TriggerType.Both:
-                        dualSenseGamepad.SetTriggerState(triggerState, triggerState, true);
+                        dualSenseGamepad.SetTriggerState(triggerState, triggerState, updateOnSet);
                         break;
                 }
             }
@@ -61,23 +62,13 @@ namespace UniSense
     [CanEditMultipleObjects]
     public class TriggerStateSetterEditor : Editor
     {
-        SerializedProperty triggerToSetProperty;
-        SerializedProperty triggerStateProperty;
         bool autoUpdate = false;
-
-        private void OnEnable()
-        {
-            triggerToSetProperty = serializedObject.FindProperty("triggerToSet");
-            triggerStateProperty = serializedObject.FindProperty("triggerState");
-        }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(triggerToSetProperty);
-            EditorGUILayout.PropertyField(triggerStateProperty);
-
+            base.DrawDefaultInspector();
 
             EditorGUILayout.Space();
 

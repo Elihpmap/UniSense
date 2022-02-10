@@ -8,6 +8,7 @@ namespace UniSense
     public class LedsColorSetter : MonoBehaviour
     {
         public Color lightBarColor;
+        public bool updateOnSet = true;
 
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
         {
@@ -21,7 +22,7 @@ namespace UniSense
             }
             else
             {
-                dualSenseGamepad.SetLightBarColor(lightBarColor);
+                dualSenseGamepad.SetLightBarColor(lightBarColor, updateOnSet);
             }
         }
     }
@@ -31,20 +32,13 @@ namespace UniSense
     [CanEditMultipleObjects]
     public class LedsColorSetterEditor : Editor
     {
-        SerializedProperty lightBarColorProperty;
         bool autoUpdate = false;
-
-        private void OnEnable()
-        {
-            lightBarColorProperty = serializedObject.FindProperty("lightBarColor");
-        }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            EditorGUILayout.PropertyField(lightBarColorProperty);
-
+            base.DrawDefaultInspector();
 
             EditorGUILayout.Space();
 
