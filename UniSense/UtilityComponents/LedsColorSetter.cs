@@ -7,12 +7,14 @@ namespace UniSense
 {
     public class LedsColorSetter : MonoBehaviour
     {
+        private Color prevColor;
         public Color lightBarColor;
+        public bool setOnChange = true;
         public bool updateOnSet = true;
 
         public void ChangeValue(Color lightBarColor)
             => this.lightBarColor = lightBarColor;
-        public void SetOnFirst(bool update = true)
+        public void SetOnFirst()
             => Set(DualSenseGamepadHID.FindFirst());
 
         public void Set(DualSenseGamepadHID dualSenseGamepad = null)
@@ -28,6 +30,15 @@ namespace UniSense
             else
             {
                 dualSenseGamepad.SetLightBarColor(lightBarColor, updateOnSet);
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            if (setOnChange && lightBarColor != prevColor)
+            {
+                SetOnFirst();
+                prevColor = lightBarColor;
             }
         }
     }
